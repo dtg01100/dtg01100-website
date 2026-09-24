@@ -89,6 +89,13 @@ export async function updateImageVersions({ checkOnly = false } = {}) {
       console.warn(`  ${img.id}: ${img.errorCode ?? 'unknown'} — ${img.error ?? ''}`)
     }
   }
+  const unsigned = result.images.filter(img => img.sbomSignature === 'missing')
+  if (unsigned.length > 0) {
+    console.warn('Images with unsigned SPDX referrers:')
+    for (const img of unsigned) {
+      console.warn(`  ${img.id}: sbomSignature is missing`)
+    }
+  }
 
   if (!checkOnly) {
     // Project Bluefin streams
