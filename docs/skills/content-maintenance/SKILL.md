@@ -143,6 +143,13 @@ Verify a new locale's strings actually resolve through vue-i18n (not just that
 the JSON parses) with a throwaway probe that calls
 `i18n.global.t('Some.Key', {}, { locale: '<tag>' })` — passing the locale as
 the third argument is required, since the global instance defaults to `en-US`.
+
+Translation issues are generated with a key count (for example "5/106 keys")
+that can be stale: the Czech issue (#849) reported a partial `cs.json`, but no
+such file existed on `main`. Check `ls src/locales/` first; if the file is
+absent the task is a new-locale addition, so the `SUPPORTED_LOCALES` edit
+above is required, not optional. Use the tag the issue names (`cs`, not
+`cs-CZ`) — it is the `?lang=` value and the language-picker label.
 ## Locale completeness
 
 `src/tests/locale-completeness.test.ts` warns on keys a locale is missing and
