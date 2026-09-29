@@ -125,8 +125,33 @@ function repositorySlug(cwd, remote = 'upstream') {
   return match[1]
 }
 
+function remoteOwner(remote, cwd) {
+  const url = tryGit(['remote', 'get-url', remote], cwd)
+  return url?.match(/github\.com(?::|\/)([^/]+)\/[^/]+?(?:\.git)?$/)?.[1] ?? null
+}
+
+export function indexPullRequestsByHead(prs, knownOwners) {
+  const byHead = new Map()
+  for (const pr of prs) {
+    const owner = pr.headRepositoryOwner?.login
+    const key = `${owner}:${pr.headRefName}`
+    if (knownOwners.has(owner) && !byHead.has(key)) {
+      byHead.set(key, pr)
+    }
+  }
+  return byHead
+}
+
 function pullRequestsByBranch(slug, cwd) {
   const upstreamOwner = slug.split('/')[0]
+  const knownOwners = new Set([upstreamOwner])
+  const remotes = tryGit(['remote'], cwd)?.split('\n').filter(Boolean) ?? []
+  for (const remote of remotes) {
+    const owner = remoteOwner(remote, cwd)
+    if (owner) {
+      knownOwners.add(owner)
+    }
+  }
   const result = spawnSync('gh', [
     'pr',
     'list',
@@ -146,16 +171,9 @@ function pullRequestsByBranch(slug, cwd) {
     throw new Error(`gh PR lookup failed: ${result.stderr.trim()}`)
   }
 
-  // `gh pr list` returns the newest records first. If a branch name was ever
-  // reused, classify it by its most recent PR — though reusing a completed PR
-  // branch is itself forbidden by AGENTS.md.
-  const byBranch = new Map()
-  for (const pr of JSON.parse(result.stdout)) {
-    if (pr.headRepositoryOwner?.login === upstreamOwner && !byBranch.has(pr.headRefName)) {
-      byBranch.set(pr.headRefName, pr)
-    }
-  }
-  return byBranch
+  // `gh pr list` returns the newest records first. Index source and fork PRs
+  // separately: branches pushed to `origin` belong to that fork, not upstream.
+  return indexPullRequestsByHead(JSON.parse(result.stdout), knownOwners)
 }
 
 function selfTest() {
@@ -167,6 +185,10 @@ function selfTest() {
   assert.equal(classifyWorktree({ ...base, prState: 'MERGED', prNumber: 1 }).ok, false)
   assert.equal(classifyWorktree({ ...base, detached: true, ahead: 0 }).ok, false)
   assert.equal(classifyWorktree({ ...base, branch: 'main', ahead: 0, isBase: true }).ok, true)
+  const indexedPrs = indexPullRequestsByHead([
+    { number: 1, headRefName: 'feature/fork', headRepositoryOwner: { login: 'fork-owner' } },
+  ], new Set(['upstream-owner', 'fork-owner']))
+  assert.equal(indexedPrs.get('fork-owner:feature/fork')?.number, 1)
   console.info('git-hygiene self-test: pass')
 }
 
@@ -194,6 +216,7 @@ function main() {
   const slug = repositorySlug(cwd, baseRemote(BASE_REF) ?? 'upstream')
   const worktrees = parseWorktrees(git(['worktree', 'list', '--porcelain'], cwd))
   const prsByBranch = pullRequestsByBranch(slug, cwd)
+  const upstreamOwner = slug.split('/')[0]
   const failures = []
   const active = []
 
@@ -211,7 +234,9 @@ function main() {
     const ahead = worktree.branch
       ? Number(git(['rev-list', '--count', `${BASE_REF}..${worktree.branch}`], cwd))
       : 0
-    const pr = prsByBranch.get(worktree.branch)
+    const remote = tryGit(['config', '--get', `branch.${worktree.branch}.remote`], cwd)
+    const owner = remote ? remoteOwner(remote, cwd) ?? upstreamOwner : upstreamOwner
+    const pr = prsByBranch.get(`${owner}:${worktree.branch}`)
     const result = classifyWorktree({
       branch: worktree.branch,
       dirty,
@@ -235,7 +260,9 @@ function main() {
       continue
     }
     const ahead = Number(git(['rev-list', '--count', `${BASE_REF}..${branch}`], cwd))
-    const pr = prsByBranch.get(branch)
+    const remote = tryGit(['config', '--get', `branch.${branch}.remote`], cwd)
+    const owner = remote ? remoteOwner(remote, cwd) ?? upstreamOwner : upstreamOwner
+    const pr = prsByBranch.get(`${owner}:${branch}`)
     const result = classifyWorktree({
       branch,
       dirty: false,
