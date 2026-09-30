@@ -181,9 +181,8 @@ Other rules a completion pass has to honour:
 - `en-US.json` is authoritative for key order as well as key set. Write the
   translated object in the same order so future diffs stay readable.
 - Parity-check mechanically before committing: flattened key count, orphan list,
-  key order, `{token}` sets, HTML tag sets, and the URL set per value. A reported
-  leaf count alone does not prove the nested paths match. The only intentional
-  URL divergence is a localized `*.wikipedia.org` wiki link.
+  key order, `{token}` sets, HTML tag sets, and the URL set per value. The only
+  intentional URL divergence is a localized `*.wikipedia.org` wiki link.
 - Adding a key is not the same as resyncing it. Locales drift: a translated
   value can be a faithful rendering of a *stale* source string (an old
   statistic, a superseded URL, a sentence the source has since dropped). Re-read
