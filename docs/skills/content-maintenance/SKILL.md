@@ -89,6 +89,21 @@ environment. Do not switch it to DOMPurify: under happy-dom, DOMPurify reports
 `isSupported === true` but returns markup unsanitized and drops leading text
 nodes, so component tests both miss real injection and fail on correct output.
 
+## Traditional Chinese locales
+
+`zh-TW` and `zh-HK` are Traditional Chinese and must not carry
+Simplified-only characters. A locale can pass key-parity and placeholder
+checks while still containing one: a Simplified character renders as a
+mismatched glyph, not a missing key. The same text often exists in both
+locales, so compare them (`git show main:src/locales/zh-HK.json`) and check
+the Traditional file against a converter rather than trusting a copy.
+
+OpenCC's `s2t` conversion flags Simplified characters (for example `锁` in
+`Devs.CNJourney` became `鎖`). It also rewrites acceptable orthographic
+variants — `了`→`瞭` and `群`→`羣` — which are valid Traditional and must not
+be "corrected". Review each reported character against its context; only
+Simplified-only forms are defects.
+
 ## Front-page downloads
 
 The three main-site download cards are owned by
