@@ -12,7 +12,14 @@
       "reference": "ghcr.io/projectbluefin/dakota-gaming@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "mediaType": "application/vnd.spdx+json",
-      "artifactType": "application/vnd.spdx+json"
+      "artifactType": "application/vnd.spdx+json",
+      "referrers": [
+        {
+          "reference": "ghcr.io/projectbluefin/dakota-gaming@sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "artifactType": "application/vnd.oci.empty.v1+json"
+        }
+      ]
     }
   ]
 }

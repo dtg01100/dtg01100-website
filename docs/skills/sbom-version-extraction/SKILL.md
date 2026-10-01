@@ -215,6 +215,8 @@ npx vitest run scripts/tests/image-sbom-registry.test.ts
 | "The tests pass so highest-version fallback is fine." | A fallback silently hides element ambiguity. Return undefined; let the caller decide. |
 | "I'll update the fixture hash later." | Use `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` from the start; it is verifiable. |
 | "The implementation is only dirty, not missing." | Tests that import a dirty file fail in a clean worktree. Commit together. |
+| "The registry listed the SBOM next to a signed image, so it is the publisher's." | `oras discover` is unsigned. The sigstore-bundle referrer beside the SPDX one is the image's provenance, subject to the image digest — it says nothing about the SBOM artifact. Only `cosign verify <repository>@<sbomDigest>` proves authorship. |
+| "Signature verification will break the site, so skip it." | The audit surfaces the gap (`missing-sbom-signature` issue) instead of publishing unproven claims. Fix the publisher; do not re-disable the check. |
 
 ## Red Flags
 
@@ -320,8 +322,11 @@ Then, in the same commit:
 
 Provenance is already proven when a `pending-mapping` issue exists:
 `verifyRegistry` reaches that branch only after `collectVerifiedImageSbom`
-returned, which runs `cosign verify-attestation` first. Clearing the flag
-therefore cannot surface a hidden `missing-provenance`.
+returned, which runs `cosign verify-attestation` (the image) and
+`verifySbomSignature` (the SPDX referrer itself) first. Clearing the flag
+therefore cannot surface a hidden `missing-provenance` or
+`missing-sbom-signature`. What `pending-mapping` does **not** cover is the
+package mapping: that review is human work on the real document.
 
 **Pin an element only when the name is actually ambiguous.** The registry's own
 convention: Dakota pins `kernel`, `mesa`, and `systemd` because BuildStream
@@ -368,12 +373,25 @@ Only these stay `EvidenceError`:
 - `missing-sbom`, `ambiguous-sbom` — referrer count is not exactly one
 - `missing-provenance` — cosign found no matching attestation
 - `invalid-provenance` — cosign rejected the identity (wrong publisher)
+- `invalid-sbom-signature` — the SPDX referrer's signature exists but fails the
+  publisher identity policy (wrong signer, bad certificate, broken bundle)
 - `invalid-sbom` — the discovered SBOM artifact is absent or corrupt
 
 Note the deliberate asymmetry in `pullSpdxReferrer`: a *network* failure while
 pulling blocks, but a discovered artifact that is missing or unparseable is an
 evidence failure, because the publisher attached a referrer it cannot serve.
 
+`collectVerifiedImageSbom` runs three proofs, in order: resolve the digest,
+verify the image's provenance attestation (`cosign verify-attestation`), then —
+before a single byte of the referrer is pulled — verify the SPDX referrer
+artifact's own signature (`cosign verify` against `<repository>@<sbomDigest>`,
+`verifySbomSignature`). The referrer digest comes from `oras discover`, which
+is an **unsigned registry listing**: any writer to the repository can attach a
+referrer, and the provenance check binds the image digest only. The signature
+check holds the artifact we are about to read to the same
+`certificateIdentityRegexp` / `certificateOidcIssuer` policy as the image.
+
+See [`references/publisher-signing.md`](references/publisher-signing.md) for details on publisher signing and warn-only verification.
 Do not widen the transport pattern to bare `certificate` or `x509`: cosign
 reports identity failures with those words, and misclassifying one as transport
 would turn a wrong-publisher signature into a silent retry.
@@ -464,32 +482,10 @@ relative specifier still fails there.
 
 ## Live-data cache parity and catalogue preservation
 
-`actions/cache` derives cache versions from the exact path list, so
-`update-content.yml` (restore and save) and `deploy.yml` (restore) must use
-the identical path list, including `public/experiences`. However, because
-`actions/cache/restore` unpacks the directory, it overwrites the tracked
-`public/experiences/catalogue.json` with the previous run's cached file.
-Tracklists require manual ingestion (`yt-dlp`) and are committed in git. To
-prevent a stale cache from perpetually resurrecting an older catalogue and
-failing `Report albums needing a manual ingest`, `update-content.yml`
-immediately restores the tracked catalogue via
-`git checkout HEAD -- public/experiences/catalogue.json` after cache
-restoration, and `refreshMetadata()` recovers any experiences present in git
-HEAD that are missing from disk.
-
-`deploy.yml` restores the same cache path list and therefore has the same
-problem, but currently has **no** `git checkout` counterpart. A deploy that
-lands between a catalogue commit and the next daily `update-content` run will
-still serve the previous run's cached catalogue until that run refreshes the
-cache. This gap is pre-existing; closing it means adding the identical
-`git checkout HEAD -- public/experiences/catalogue.json` step after
-`deploy.yml`'s restore step. Note that `refreshMetadata()` does not run during
-deploy, so the script-side recovery below does not cover this path.
-
-`refreshMetadata()` only *overwrites* an on-disk entry with its git HEAD copy
-when running in CI (`CI`/`GITHUB_ACTIONS`, overridable via the
-`preferGitEntries` option). On a CI runner the working tree is a clean
-checkout plus a restored cache, so any divergence is stale cache data. Locally
-the working tree may hold an uncommitted `yt-dlp` ingest, and overwriting it
-would silently discard that manual scrape — so outside CI the merge only adds
-albums missing from disk and never replaces existing entries.
+`actions/cache` derives cache versions from the exact path list, so `update-content.yml`
+and `deploy.yml` must use the identical path list. Because `actions/cache/restore`
+unpacks the directory, it overwrites the tracked `public/experiences/catalogue.json`.
+Both workflows immediately restore the tracked catalogue via
+`git checkout HEAD -- public/experiences/catalogue.json` after cache restoration.
+`refreshMetadata()` only overwrites an on-disk entry with its git HEAD copy when
+running in CI (`preferGitEntries`), preserving local scrape edits outside CI.

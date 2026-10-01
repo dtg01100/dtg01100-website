@@ -124,6 +124,7 @@ export async function verifyRegistry(records, dependencies) {
       ...identity,
       imageDigest: collected.imageDigest,
       sbomDigest: collected.sbomDigest,
+      sbomSignature: collected.sbomSignature,
       missingRequired: extraction.missingRequired,
       missingOptional: extraction.missingOptional,
       ambiguousRequired,

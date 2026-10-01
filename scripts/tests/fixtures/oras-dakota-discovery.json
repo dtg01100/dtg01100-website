@@ -12,7 +12,14 @@
       "reference": "ghcr.io/projectbluefin/dakota@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
       "digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
       "mediaType": "application/vnd.spdx+json",
-      "artifactType": "application/vnd.spdx+json"
+      "artifactType": "application/vnd.spdx+json",
+      "referrers": [
+        {
+          "reference": "ghcr.io/projectbluefin/dakota@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "artifactType": "application/vnd.oci.empty.v1+json"
+        }
+      ]
     }
   ]
 }

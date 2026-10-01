@@ -243,6 +243,7 @@ describe('verifyRegistry — failure policy', () => {
       'required',
       'imageDigest',
       'sbomDigest',
+      'sbomSignature',
       'status',
       'fields',
       'values',
