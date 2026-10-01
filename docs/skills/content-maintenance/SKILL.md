@@ -143,6 +143,19 @@ Verify a new locale's strings actually resolve through vue-i18n (not just that
 the JSON parses) with a throwaway probe that calls
 `i18n.global.t('Some.Key', {}, { locale: '<tag>' })` — passing the locale as
 the third argument is required, since the global instance defaults to `en-US`.
+
+Translation issues quote a key count (for example "5/106 keys") that can be
+stale, including for a locale file that no longer exists. Check
+`ls src/locales/` before trusting it: an absent file makes the task a
+new-locale addition, so the `SUPPORTED_LOCALES` edit above is required.
+
+The filename tag is matched exactly. `App.vue`, `DakotaApp.vue`, and
+`ServerApp.vue` select a locale only when `?lang=` or `navigator.language`
+equals an available tag, with no language-subtag fallback: a bare-language
+file (`cs`) is not picked for a `cs-CZ` browser, and a region file (`sk-SK`)
+is not picked for a bare `sk` browser. Keep the tag the issue names; changing
+the matching is a runtime change, not locale content.
+
 ## Locale completeness
 
 `src/tests/locale-completeness.test.ts` warns on keys a locale is missing and
@@ -204,6 +217,13 @@ npx vitest run src/tests/locale-completeness.test.ts
 - [ ] Existing keys and placeholders remain intact.
 - [ ] Unlisted status is unchanged.
 - [ ] Relevant checks pass.
+
+Re-derive the exact-match locale selection (no language-subtag fallback):
+
+```bash
+rg -n "navigator.language|availableLocales.includes" \
+  src/App.vue src/DakotaApp.vue src/ServerApp.vue
+```
 
 ## Locale parity for a new or completed translation
 
