@@ -1,51 +1,156 @@
 {
   "TopBar": {
-    "Reports": "Reports"
+    "Docs": "Dokumentácia",
+    "Blog": "Blog",
+    "Changelog": "Zoznam zmien",
+    "Reports": "Prehľady",
+    "Discussions": "Diskusie",
+    "Feedback": "Spätná väzba",
+    "Store": "Obchod (iba v USA)"
   },
   "Landing": {
-    "Title": "Linuxová pracovná stanica novej generácie, vyrobená pre spoľahlivosť, výkon a udržateľnosť.",
+    "Title": "Pracovná stanica novej generácie so systémom Linux, navrhnutá pre spoľahlivosť, výkon a udržateľnosť.",
     "DiscoverButton": "Objaviť",
     "TryOutButton": "Vyskúšať"
   },
   "Users": {
     "Tag": "Pre",
-    "Title": "Teba",
+    "Title": "vás",
+    "Intro": "Bluefin je operačný systém pre váš počítač. Spája to najlepšie z oboch svetov: spoľahlivosť a jednoduchosť používania Chromebooku s výkonom prostredia GNOME.",
     "Box1": "Aplikácie z Flathubu",
     "Box2": "Takmer nulová údržba",
-    "Box3": "Vrátane GPU driverov"
+    "Box3": "Ovládače grafických kariet v cene",
+    "Features": "Bluefin prináša automatické aktualizácie založené na obrazoch systému a jednoduchý grafický obchod s aplikáciami, takže vám nebude stáť v ceste. Získajte, čo potrebujete, bez kompromisov v stabilite systému. Linuxový desktop sa vyvinul a ponúka nový začiatok pre ďalšiu generáciu. Viac informácií nájdete v [oznamovacom blogovom príspevku](https://www.ypsidanger.com/announcing-project-bluefin/) a [úvodnej dokumentácii](https://docs.projectbluefin.io).",
+    "BluefinArtworkAlt": "Bluefin hľadí do budúcnosti Linuxu – zjavne doľava"
+  },
+  "EvolutionQuote": {
+    "Quote": "Evolúcia je proces neustáleho vetvenia a rozširovania.",
+    "Author": "Stephen Jay Gould",
+    "WikiLink": "https://en.wikipedia.org/wiki/Stephen_Jay_Gould"
   },
   "Devs": {
     "Tag": "Pre",
-    "Title": "Vývojárov",
-    "BoxOne": "Visual Studio Code s devcontainermy.",
-    "BoxTwo": "Terminál zameraný na kontajnery",
-    "BoxThree": "Devpod pre vývojárske prostredia",
-    "BoxFour": "Homebrew jedným klikom",
-    "TowerJoke": "<b>Prekonaj</b> svoj Backlog!"
+    "Title": "vývojárov",
+    "Features": "Bluefin ponúka voliteľný „developer mode“, ktorý premení vaše zariadenie na výkonnú pracovnú stanicu. Obsahuje pracovné postupy zamerané na kontajnery, vďaka ktorým môžete začať podľa toho, odkiaľ prichádzate, alebo si priniesť vlastné nástroje. Na svete je [20 miliónov vývojárov cloud-native technológií](https://www.cncf.io/announcements/2026/03/24/cncf-and-slashdata-report-finds-cloud-native-community-reaches-nearly-20-million-developers/); jednoducho využívajte tieto [nástroje na špičke odvetvia](https://landscape.cncf.io/)...",
+    "BoxOne": "Visual Studio Code s devcontainermi",
+    "BoxTwo": "Pracujte so svojimi obľúbenými distribúciami Linuxu v termináli zameranom na kontajnery",
+    "BoxThree": "Navrhnuté na cloud-native vývoj s najlepšími nástrojmi CNCF vrátane Kubernetes",
+    "BoxFour": "Homebrew pripravený na použitie, predvolene s rovnakými nástrojmi ako na Macu",
+    "BoxFive": "Podman Desktop na grafickú správu kontajnerov",
+    "BoxSix": "IDE JetBrains na jeden príkaz",
+    "RuntimeContainers": "Zahrnuté [prostredie na spúšťanie kontajnerov](https://podman.io) odomyká potenciál vášho tímu. Používajte na svojom počítači rovnaké nástroje, ktoré poháňajú modernú internetovú infraštruktúru. Bluefin vie, ako dostať softvér do produkcie.",
+    "CNJourney": "Zameriavame sa na linuxových operátorov, ktorí Linux na desktope nepoužívajú, pretože ich sklamal. Preto spoločne posúvame linuxový desktop na cloud-native cestu a budujeme ho ako komunitu. ",
+    "KarlArtworkAlt": "Karl týčiaci sa nad backlogom",
+    "TowerJoke": "Prevýšte svoj backlog ako <b>veža</b>!"
+  },
+  "InitiativeQuote": {
+    "Quote": "Buďte tým, kto hýbe, nie tým, s kým hýbu.",
+    "Author": "Veliteľ Zavala (Destiny)",
+    "WikiLink": "https://en.wikipedia.org/wiki/Lance_Reddick"
   },
   "Mission": {
     "Tag": "Naša",
-    "Title": "Misia",
-    "BluefinChillAlt": "Ležiaca a odpočívajúca Bluefin"
+    "Title": "misia",
+    "Text": {
+      "NewBreed": "Bluefin nie je len softvér; je to nový druh zvieraťa, prispôsobený na prežitie v drsnom ekosystéme ovládanom obrami a zároveň chrániaci svoju rodinu.",
+      "Change": "Technológia sa začína pri lokálnom počítači, zariadení, ktorého sa dotýkate, a ten by mal byť rovnako dôležitý ako zvyšok linuxového ekosystému.",
+      "CloudNative": "Zavádzaním cloud-native postupov na desktop chceme vzbudiť záujem o osobné počítače a zároveň vyjsť v ústrety ďalšej generácii prispievateľov do open source. Bluefin je navrhnutý ako nástroj, na ktorý sa môžete spoľahnúť pri tom, čo vám ide najlepšie. Naša odpoveď je jednoduchá: používajte to, čo používajú odborníci na infraštruktúru. Súčasný linuxový desktop nás k cieľu nedoviedol, no veríme, že vytvorené sa dá aj pretvoriť. Urobme ho lepším.",
+      "Sustainability": "Bluefin je o udržateľnosti, ktorá zahŕňa softvér, hardvér aj ľudí."
+    },
+    "CleverGirl": "Ale cestou nám možno vykuchá vnútornosti. Šikovné dievča.",
+    "BluefinChillAlt": "Bluefin leží a oddychuje"
+  },
+  "SpreadQuote": {
+    "Quote": "Svetlo možno šíriť dvoma spôsobmi: byť sviecou alebo zrkadlom, ktoré ho odráža.",
+    "Author": "Edith Wharton",
+    "WikiLink": "https://en.wikipedia.org/wiki/Edith_Wharton"
   },
   "Video": {
     "Url": "https://www.youtube.com/embed/Nz-yyDwTfRM&autoplay=1",
-    "Title": "Úvod do Bluefin Linux"
+    "Title": "Predstavenie Bluefinu",
+    "Text": {
+      "Passion": "Projekt Bluefin nie je hotový produkt; je to neustále rozvíjaný projekt z nadšenia, o ktorý sa starajú [nadšenci do cloud-native technológií](https://github.com/ublue-os/bluefin/graphs/contributors) usilujúci sa o spoľahlivejší a udržateľnejší zážitok z Linuxu na desktope. Pozrite si [otvorené problémy](https://github.com/ublue-os/bluefin/issues).",
+      "StateOfTheArt": "Bluefin predstavuje vrchol súčasného pokroku: krásne a jedinečné stvorenie, dokonalého predátora vo svete, ktorý bude nevyhnutne čeliť výzvam. Musíme sa prispôsobiť. Zvládneme to **spoločne**."
+    }
+  },
+  "Bazaar": {
+    "Tag": "Spúšťajte svoje obľúbené",
+    "Title": "aplikácie",
+    "Description": "Bluefin využíva obchod s aplikáciami <a href=\"https://usebazaar.org\" target=\"_blank\">Bazaar</a>, v ktorom môžete jednoducho inštalovať a spravovať svoje obľúbené aplikácie z <a href=\"https://flathub.org\" target=\"_blank\">Flathubu</a> aj z výberu aplikácií, ktoré by sa vám mohli páčiť.",
+    "Additional": "Bluefin navyše poskytuje <a href=\"https://docs.brew.sh/Homebrew-on-Linux\" target=\"_blank\">Homebrew</a> a pracovné postupy s aplikačnými kontajnermi, vďaka čomu je spúšťanie ľubovoľného softvéru jednoduché. Keďže celý svet softvéru je dostupný v kontajneroch, ich používanie je rýchle a efektívne! <br><br><strong>Bluefin sa vyvíja na Bluefine.</strong>",
+    "FlathubButton": "Zobraziť aplikácie na Flathube"
   },
   "TryBluefin": {
-    "Title": "Vyskúšať Bluefin"
+    "Tag": "Vyskúšajte",
+    "Title": "Bluefin",
+    "LegacyDownloads": "Staršie verzie založené na Fedore sú [naďalej dostupné na stiahnutie](https://docs.projectbluefin.io/downloads/), ale novým používateľom ich neodporúčame.",
+    "Wolves": {
+      "Cards": {
+        "AlphaBadge": "⚠️ Alfa.",
+        "AlphaBadgeSub": "Prijmite primerané bezpečnostné opatrenia.",
+        "ComingSoonBadge": "Už čoskoro",
+        "Dakota": "Dakota",
+        "DakotaDescription": "Dokonalá podoba. Zdokonalený Bluefin.",
+        "Utah": "Utah",
+        "UtahDescription": "",
+        "Server": "Bluefin Server",
+        "ServerDescription": "Popredný serverový operačný systém FSDK na svete."
+      }
+    }
+  },
+  "Community": {
+    "Tag": "Naša",
+    "Title": "komunita",
+    "Documentation": {
+      "Title": "Dokumentácia",
+      "Description": "Hľadáte podporu? Navštívte našu dokumentáciu, kde nájdete aktuálne návody na inštaláciu, používanie aj riešenie problémov.",
+      "Button": "Zobraziť dokumentáciu",
+      "DiscordButton": "Pridať sa na Discord",
+      "DiscussionsButton": "Diskusie"
+    },
+    "Contribute": {
+      "Tag": "Naši prispievatelia",
+      "Title": "Prispejte",
+      "Description": "Pomôžte s vývojom Bluefinu prispievaním kódom, nahlasovaním chýb alebo navrhovaním funkcií. Ak chcete prispieť finančne, môžete podporiť aj jednotlivých prispievateľov.",
+      "Button": "Navštíviť GitHub",
+      "DonateButton": "Podporiť projekt"
+    }
+  },
+  "News": {
+    "Title": "Novinky",
+    "Loading": "Načítavajú sa blogové príspevky...",
+    "NoPosts": "Nenašli sa žiadne blogové príspevky.",
+    "ViewAll": "Zobraziť všetky príspevky na oficiálnom blogu"
   },
   "Flock": {
-    "Title": "Náš tím",
-    "Description": "Bluefin vytvára skupina odhodlaných udržiavateľov a prispievateľov."
+    "Title": "Naša komunita",
+    "Description": "Bluefin vytvára skupina oddaných správcov a prispievateľov.",
+    "AlumniTitle": "Medzi nami sú aj bývalí zamestnanci spoločností ako",
+    "SponsorsTitle": "Naši sponzori",
+    "Attribution": "Štatistiky poskytuje"
   },
   "Footer": {
+    "PoweredBy": "Poháňa",
+    "Project": {
+      "Title": "Projekt Bluefin je vytvorený pomocou",
+      "Ublue": "Komunitná súprava nástrojov, ktorá pomáha obnoviť linuxový desktop. Vytvorená z lásky k hre. Vitajte vo svete nezávislých cloud-native technológií."
+    },
+    "Credits": {
+      "Intro": "Všetky ilustrácie vytvorili ľudia.",
+      "Website": "Webová stránka – [Jan Dolanský](https://dolansky.dev/) a [Kyle Gospodnetich](https://kylegospodneti.ch/)",
+      "Logos": "Logá a tapety – [Jacob Schnurr](https://www.etsy.com/shop/JSchnurrCommissions?listing_id=1425657775)",
+      "ImageEdit": "Úprava obrázkov – [Delphic Melody](https://github.com/delphicmelody/)",
+      "Wallpapers": "Ilustračná tapeta Bluefinu – Andy Frazer, [DragonsofWales](https://www.etsy.com/fi-en/shop/DragonsofWales?ref=profile_header)",
+      "Translations": "Preklady – [Tulip Blossom](https://github.com/tulilirockz), [karhima](https://github.com/karhima), [Niklas](https://niklas.tech), [Crono](https://github.com/EPOCHvoyager), [Tsu-gu](https://github.com/Tsu-gu) a [Mimolet](https://github.com/theMimolet)",
+      "Thanks": "Osobitné poďakovanie – [Aaron Lake](https://www.linkedin.com/in/aaron-lake/), [Brian Ketelsen](https://brian.dev/), [Dustin Kirkland](https://www.kotterva.com/), [Wayne Witzel](https://github.com/wwitzel3) a [Marco Ceppi](https://github.com/marcoceppi)"
+    },
     "Copyright": "Copyright {date} © Project Bluefin a Universal Blue"
   },
   "Navbar": {
-    "ForYou": "Pre Teba",
-    "ForDevs": "Pre Vývojárov",
-    "OurMission": "Naša Misia",
-    "TryOut": "Vyskúšať"
+    "ForYou": "Pre vás",
+    "ForDevs": "Pre vývojárov",
+    "OurMission": "Naša misia",
+    "TryOut": "Vyskúšať",
+    "Community": "Komunita"
   }
 }
