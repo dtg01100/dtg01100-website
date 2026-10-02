@@ -33,9 +33,11 @@ export const DEFAULT_LOCALE = 'en-US'
  * Currently scoped to Simplified Chinese: a `zh-CN`/`zh-SG` browser has no
  * `zh-CN.json` or `zh-SG.json` bundle to read from, and there is exactly one
  * Simplified-Chinese bundle (`zh-Hans`), so routing these regions to it is
- * unambiguous. Traditional-Chinese regions (`zh-HK`, `zh-TW`, `zh-MO`) are
- * not aliased — each has its own; collapsing them would pick the wrong
- * orthography for a real user.
+ * unambiguous. Traditional-Chinese regions (`zh-HK`, `zh-TW`) each have
+ * their own bundle; the script-side region `zh-MO` is not aliased and has
+ * no bundle of its own, so it falls to the default. Collapsing any of them
+ * onto another Chinese bundle would pick the wrong orthography for a real
+ * user.
  *
  * Adding more aliases is allowed only when the alias target is the *only*
  * bundle the source language ships. Generic subtag fallback (bare `zh` →

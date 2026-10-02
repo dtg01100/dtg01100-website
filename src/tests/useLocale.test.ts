@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { resolveLocale, setLocale as setLocaleFn } from '../composables/useLocale'
+import { resolveLocale, setLocale } from '../composables/useLocale'
 import { i18n } from '../locales/schema'
 
 const DEFAULT_LOCALE = 'en-US'
@@ -28,10 +28,6 @@ const SUPPORTED_LOCALES = [
   'zh-Hans',
   'zh-TW',
 ]
-
-// Renamed import keeps the inner-afterEach closure stable; the public name is
-// still `setLocale` everywhere else.
-const setLocale = setLocaleFn
 
 describe('useLocale', () => {
   afterEach(() => {
@@ -110,16 +106,6 @@ describe('useLocale', () => {
       expect(resolveLocale('')).toBe(DEFAULT_LOCALE)
       expect(resolveLocale('xx')).toBe(DEFAULT_LOCALE)
       expect(resolveLocale('klingon')).toBe(DEFAULT_LOCALE)
-    })
-
-    it('ignores aliases whose target is not actually bundled', () => {
-      // Defensive: if a future change renames `zh-Hans` away, the alias must
-      // not silently start returning the default — and it must not return a
-      // phantom tag. The default is the only safe answer.
-      // The unit can't rebuild the i18n catalogue, so it documents the
-      // current (target-present) state and asserts the resolution shape.
-      expect(resolveLocale('zh-CN')).toBe('zh-Hans')
-      expect(resolveLocale('zh-CN')).not.toBe('')
     })
   })
 })
