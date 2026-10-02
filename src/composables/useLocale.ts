@@ -4,12 +4,6 @@ import { i18n } from '../locales/schema'
  * Set the active locale.
  * vue-i18n is configured in LEGACY mode, where i18n.global.locale
  * is a plain string — NOT a ref. Never write .locale.value.
- *
- * The `unknown` cast survives the LEGACY-only mode the schema pins:
- * vue-i18n's VueI18n instance type is generic in the locale type, so
- * `i18n.global.locale` is typed against `MessageSchema['locale']`, which is
- * too narrow to assign every supported tag at runtime. `unknown` keeps the
- * unsoundness scoped and reviewable in one line.
  */
 export function setLocale(locale: string): void {
   ;(i18n.global as unknown as { locale: string }).locale = locale
