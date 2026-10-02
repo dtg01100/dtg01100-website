@@ -23,6 +23,7 @@ const SUPPORTED_LOCALES = [
   'sk-SK',
   'sv',
   'tr',
+  'uk',
   'vi-VN',
   'zh-HK',
   'zh-Hans',
@@ -35,9 +36,7 @@ describe('useLocale', () => {
   })
 
   it('bundles the supported locales', () => {
-    // 'uk' is added by this branch; keep it out of the list above so the
-    // literal stays mergeable with locales added on main.
-    const expected = [...SUPPORTED_LOCALES, 'uk'].sort()
+    const expected = [...SUPPORTED_LOCALES].sort()
     expect(Object.keys(i18n.global.messages).sort()).toEqual(expected)
   })
 
