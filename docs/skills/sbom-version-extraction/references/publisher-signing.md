@@ -13,6 +13,17 @@ operates structurally in warn-only mode: if `sbomReferrer.referrers` is empty
 without failing the build. When nested referrers exist (as on `projectbluefin/dakota:stable`),
 `cosign verify` validates the signature against the publisher policy.
 
+Warn-only is a transition state, not a floor. The "is it signed?" decision is
+read from the same unsigned discovery listing the signature check distrusts, so
+for a publisher that already signs, an unsigned referrer is a downgrade an
+attacker with registry write access can produce by simply not signing. Registry
+records for such publishers set `requireSbomSignature: true`
+(`scripts/lib/image-sbom-registry.js`); the collector then throws
+`EvidenceError('missing-sbom-signature')` before pulling the SBOM, which
+sanitizes the affected fields instead of publishing them. All `dakota*`
+records carry the flag. Flip it on for a publisher as soon as its signing is
+verified live; never remove it once set.
+
 Verified live with cosign v3.1.3 / oras v1.2.0 against GHCR:
 
 - Every registered image carries exactly one
