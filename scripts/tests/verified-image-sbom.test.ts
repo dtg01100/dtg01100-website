@@ -5,6 +5,7 @@ import {
   collectVerifiedImageSbom,
   discoverReferrers,
   EvidenceError,
+  findEmbeddedSpdxLayer,
   pullSpdxReferrer,
   resolveImageDigest,
   ToolingError,
@@ -610,5 +611,151 @@ describe('collectVerifiedImageSbom — a pending image starts publishing an SBOM
     expect(result.imageDigest).toBe(GAMING_DIGEST)
     expect(result.sbomDigest).toBe(`sha256:${'f'.repeat(64)}`)
     expect(result.sbom.packages).toHaveLength(2)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Embedded SBOM (projectbluefin/server shape)
+//
+// The server publishes the SBOM as a `*.spdx.json` layer inside the OCI
+// artifact manifest rather than as a separate SPDX referrer. The collector
+// must read the artifact manifest, locate the SBOM layer by its
+// `org.opencontainers.image.title` annotation, and verify provenance over the
+// artifact digest so the SBOM bytes are authenticated by association.
+// ---------------------------------------------------------------------------
+
+const SERVER_RECORD = {
+  id: 'bluefin-server',
+  product: 'bluefin-server',
+  required: true,
+  sbomSource: 'embedded',
+  image: 'ghcr.io/projectbluefin/bluefin-server:latest',
+  certificateIdentityRegexp: '^https://github.com/projectbluefin/server/.github/workflows/[^@]+@refs/.+$',
+  certificateOidcIssuer: 'https://token.actions.githubusercontent.com',
+  packages: {},
+}
+
+const SERVER_IMAGE_DIGEST = `sha256:${'a'.repeat(64)}`
+const SERVER_SBOM_DIGEST = `sha256:${'b'.repeat(64)}`
+
+const SERVER_MANIFEST = {
+  schemaVersion: 2,
+  mediaType: 'application/vnd.oci.image.manifest.v1+json',
+  artifactType: 'application/vnd.projectbluefin.server.release.v1',
+  config: { mediaType: 'application/vnd.oci.empty.v1+json', digest: 'sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a', size: 2 },
+  layers: [
+    { mediaType: 'application/vnd.oci.image.layer.v1.tar', digest: `sha256:${'c'.repeat(64)}`, size: 2262, annotations: { 'org.opencontainers.image.title': 'SHA256SUMS' } },
+    {
+      mediaType: 'application/vnd.oci.image.layer.v1.tar',
+      digest: SERVER_SBOM_DIGEST,
+      size: 95087,
+      annotations: { 'org.opencontainers.image.title': 'bluefin-server_26.10.868.spdx.json' },
+    },
+  ],
+}
+
+const SERVER_SBOM = { spdxVersion: 'SPDX-2.3', packages: [{ name: 'linux', versionInfo: '7.2.2' }] }
+
+describe('collectVerifiedImageSbom — embedded SBOM layer', () => {
+  it('reads the SBOM layer inside the artifact and verifies provenance over the artifact digest', async () => {
+    const mockFs = {
+      mkdtempSync: vi.fn().mockReturnValue('/mock-tmp/embedded-sbom'),
+      readdirSync: vi.fn().mockReturnValue(['bluefin-server_26.10.868.spdx.json']),
+      readFileSync: vi.fn().mockReturnValue(JSON.stringify(SERVER_SBOM)),
+      rmSync: vi.fn(),
+    }
+
+    const run = vi.fn()
+      .mockReturnValueOnce(JSON.stringify({ digest: SERVER_IMAGE_DIGEST }))
+      .mockReturnValueOnce(JSON.stringify(SERVER_MANIFEST))
+      .mockReturnValueOnce('')
+      .mockReturnValueOnce('')
+
+    const result = await collectVerifiedImageSbom(SERVER_RECORD, { run, fs: mockFs })
+
+    expect(result.imageDigest).toBe(SERVER_IMAGE_DIGEST)
+    expect(result.sbomDigest).toBe(SERVER_SBOM_DIGEST)
+    expect(result.sbomSource).toBe('embedded')
+    expect(result.sbom).toMatchObject(SERVER_SBOM)
+
+    // Two oras manifest fetch calls happen in the embedded path: the first
+    // inside resolveImageDigest (with --descriptor), the second inside
+    // findEmbeddedSpdxLayer against the image digest directly.
+    const manifestFetchCalls = run.mock.calls.filter(call => call[0] === 'oras' && call[1][0] === 'manifest' && call[1][1] === 'fetch')
+    expect(manifestFetchCalls.length).toBeGreaterThanOrEqual(2)
+    const embeddedManifestCall = manifestFetchCalls.find(call => call[1][2] === `ghcr.io/projectbluefin/bluefin-server@${SERVER_IMAGE_DIGEST}`)
+    expect(embeddedManifestCall).toBeDefined()
+
+    const cosignCalls = run.mock.calls.filter(call => call[0] === 'cosign')
+    expect(cosignCalls).toHaveLength(1)
+    // The args array contains the image digest reference as the last element.
+    const lastArg = cosignCalls[0][1][cosignCalls[0][1].length - 1]
+    expect(lastArg).toContain(SERVER_IMAGE_DIGEST)
+    expect(lastArg).not.toContain(SERVER_SBOM_DIGEST)
+  })
+
+  it('reports missing-sbom when no SPDX referrer and no embedded layer exist', async () => {
+    const manifestWithoutEmbedded = { ...SERVER_MANIFEST, layers: SERVER_MANIFEST.layers.filter(l => !l.digest.endsWith('b'.repeat(64))) }
+
+    const mockFs = {
+      mkdtempSync: vi.fn(),
+      readdirSync: vi.fn(),
+      readFileSync: vi.fn(),
+      rmSync: vi.fn(),
+    }
+
+    const run = vi.fn()
+      .mockReturnValueOnce(JSON.stringify({ digest: SERVER_IMAGE_DIGEST }))
+      .mockReturnValueOnce(JSON.stringify(manifestWithoutEmbedded))
+
+    await expect(collectVerifiedImageSbom(SERVER_RECORD, { run, fs: mockFs })).rejects.toMatchObject({
+      name: 'EvidenceError',
+      code: 'missing-sbom',
+    })
+  })
+
+  it('reports ambiguous-sbom when multiple .spdx.json layers exist in the manifest', async () => {
+    const ambiguousManifest = {
+      ...SERVER_MANIFEST,
+      layers: [
+        ...SERVER_MANIFEST.layers,
+        {
+          mediaType: 'application/vnd.oci.image.layer.v1.tar',
+          digest: `sha256:${'d'.repeat(64)}`,
+          size: 100,
+          annotations: { 'org.opencontainers.image.title': 'bluefin-server_another.spdx.json' },
+        },
+      ],
+    }
+
+    const mockFs = {
+      mkdtempSync: vi.fn(),
+      readdirSync: vi.fn(),
+      readFileSync: vi.fn(),
+      rmSync: vi.fn(),
+    }
+
+    const run = vi.fn()
+      .mockReturnValueOnce(JSON.stringify({ digest: SERVER_IMAGE_DIGEST }))
+      .mockReturnValueOnce(JSON.stringify(ambiguousManifest))
+
+    await expect(collectVerifiedImageSbom(SERVER_RECORD, { run, fs: mockFs })).rejects.toMatchObject({
+      name: 'EvidenceError',
+      code: 'ambiguous-sbom',
+    })
+  })
+})
+
+describe('findEmbeddedSpdxLayer', () => {
+  it('returns the layer digest and size for the matching .spdx.json title', () => {
+    const run = vi.fn().mockReturnValue(JSON.stringify(SERVER_MANIFEST))
+    const result = findEmbeddedSpdxLayer(`ghcr.io/projectbluefin/bluefin-server@${SERVER_IMAGE_DIGEST}`, run)
+    expect(result).toEqual({ digest: SERVER_SBOM_DIGEST, size: 95087 })
+  })
+
+  it('returns undefined when no .spdx.json layer is in the manifest', () => {
+    const manifest = { ...SERVER_MANIFEST, layers: [{ mediaType: 'application/vnd.oci.image.layer.v1.tar', digest: `sha256:${'c'.repeat(64)}`, size: 1 }] }
+    const run = vi.fn().mockReturnValue(JSON.stringify(manifest))
+    expect(findEmbeddedSpdxLayer(`ghcr.io/projectbluefin/bluefin-server@${SERVER_IMAGE_DIGEST}`, run)).toBeUndefined()
   })
 })

@@ -36,13 +36,94 @@ export function normalizeVersion(raw) {
 }
 
 /**
+ * Canonical form of a bst-element locator for cross-plugin comparison.
+ *
+ * BuildStream SBOMs emit the locator in two distinct shapes:
+ *
+ *   - buildstream-sbom plugin keeps each segment verbatim and exposes the
+ *     locator through `externalRefs[].referenceLocator`. Locator form:
+ *     `freedesktop-sdk.bst:bootstrap/linux-headers.bst`.
+ *
+ *   - buildstream-plugins-community collect_manifest plugin strips `.bst` from
+ *     every segment, replaces the path separator (`/`) with `-`, and joins
+ *     segments with `-`; the result lives only in the SPDXID prefix:
+ *     `SPDXRef-freedesktop-sdk-bootstrap-linux-headers-0`.
+ *
+ * To disambiguate the same kernel element across both shapes, normalise both
+ * sides to a flat, project-or-element-only string with every separator
+ * collapsed to `-` and `.bst` stripped.
+ *
+ * @param {string} locator
+ * @returns {string}
+ */
+export function canonicalElementForm(locator) {
+  if (typeof locator !== 'string' || locator === '') {
+    return ''
+  }
+  return locator
+    .split(':')
+    .map(segment => segment.replace(/\.bst$/u, '').replace(/[/.]/gu, '-'))
+    .join('-')
+}
+
+/**
+ * Canonical form of an SPDXID (after stripping the SPDXRef- prefix and the
+ * trailing per-element instance index). Used to compare collect_manifest
+ * SPDXIDs against a locator authored in
+ * `freedesktop-sdk.bst:components/linux.bst` form.
+ *
+ * @param {string} spdxId
+ * @returns {string|undefined}
+ */
+export function canonicalSpdxIdForm(spdxId) {
+  if (typeof spdxId !== 'string' || !spdxId.startsWith('SPDXRef-')) {
+    return undefined
+  }
+  return spdxId.slice('SPDXRef-'.length).replace(/-\d+$/u, '')
+}
+
+/**
  * Return the bst-element referenceLocator for a package, if present.
+ *
+ * Prefers `externalRefs[].referenceLocator` (the buildstream-sbom shape). When
+ * the SBOM was produced by the collect_manifest plugin (which omits
+ * externalRefs), falls back to a canonical form derived from the SPDXID
+ * prefix; callers that need exact locator equality must compare against
+ * {@link canonicalElementForm} on both sides via {@link packageElementMatches}.
  *
  * @param {object} pkg - SPDX package object
  * @returns {string|undefined}
  */
 export function packageElement(pkg) {
-  return pkg.externalRefs?.find(ref => ref.referenceType === 'bst-element')?.referenceLocator
+  const fromRefs = pkg.externalRefs?.find(ref => ref.referenceType === 'bst-element')?.referenceLocator
+  if (fromRefs) {
+    return fromRefs
+  }
+  return canonicalSpdxIdForm(pkg.SPDXID)
+}
+
+/**
+ * Decide whether a package's bst-element matches a registry selector.
+ *
+ * Equivalent to `packageElement(pkg) === locator` for externalRefs-backed
+ * packages, and additionally handles collect_manifest SPDXIDs whose locator
+ * is encoded as a flat SPDXID prefix.
+ *
+ * @param {object} pkg - SPDX package object
+ * @param {string} locator - registry element selector
+ * @returns {boolean}
+ */
+export function packageElementMatches(pkg, locator) {
+  if (locator == null) {
+    return true
+  }
+  const fromRefs = pkg.externalRefs?.find(ref => ref.referenceType === 'bst-element')?.referenceLocator
+  if (fromRefs != null) {
+    return fromRefs === locator
+  }
+  const pkgForm = canonicalElementForm(canonicalSpdxIdForm(pkg.SPDXID) ?? '')
+  const selectorForm = canonicalElementForm(locator)
+  return pkgForm !== '' && pkgForm === selectorForm
 }
 
 /**
@@ -74,7 +155,7 @@ export function extractMappedVersions(sbom, mappings) {
 
     // Apply element pin (BuildStream)
     if (mapping.element != null) {
-      candidates = candidates.filter(pkg => packageElement(pkg) === mapping.element)
+      candidates = candidates.filter(pkg => packageElementMatches(pkg, mapping.element))
     }
 
     // Apply Syft selectors

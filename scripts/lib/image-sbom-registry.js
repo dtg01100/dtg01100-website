@@ -6,12 +6,13 @@
  *   foundBy?: string,
  *   required: boolean
  * }} ImageSbomPackageRecord
- *
+/**
  * @typedef {{
  *   id: string,
- *   product: 'bluefin'|'dakota',
+ *   product: 'bluefin'|'dakota'|'bluefin-server',
  *   required: boolean,
  *   pendingSbom?: boolean,
+ *   sbomSource?: 'referrer'|'embedded',
  *   image: string,
  *   certificateIdentityRegexp: string,
  *   certificateOidcIssuer: string,
@@ -65,7 +66,7 @@ export function validateImageSbomRegistry(records) {
     }
     seenIds.add(record.id)
 
-    assert(typeof record.product === 'string' && ['bluefin', 'dakota'].includes(record.product), `image registry id "${record.id}" must define product`)
+    assert(typeof record.product === 'string' && ['bluefin', 'dakota', 'bluefin-server'].includes(record.product), `image registry id "${record.id}" must define product`)
     assert(typeof record.required === 'boolean', `image registry id "${record.id}" must define required`)
     assert(typeof record.image === 'string' && record.image.trim() !== '', `image registry id "${record.id}" must define image`)
     assert(hasImageTagOrDigest(record.image), `image registry id "${record.id}" must use a tagged image reference`)
@@ -74,6 +75,9 @@ export function validateImageSbomRegistry(records) {
     assert(isRecord(record.packages), `image registry id "${record.id}" must define packages`)
     if (record.pendingSbom !== undefined) {
       assert(typeof record.pendingSbom === 'boolean', `image registry id "${record.id}" must define pendingSbom as a boolean`)
+    }
+    if (record.sbomSource !== undefined) {
+      assert(record.sbomSource === 'referrer' || record.sbomSource === 'embedded', `image registry id "${record.id}" must define sbomSource as 'referrer' or 'embedded'`)
     }
 
     if (Object.keys(record.packages).length === 0) {
@@ -229,6 +233,34 @@ export const IMAGE_SBOM_REGISTRY = Object.freeze([
     certificateIdentityRegexp: '^https://github.com/projectbluefin/dakota/.github/workflows/[^@]+@refs/.+$',
     certificateOidcIssuer: 'https://token.actions.githubusercontent.com',
     packages: {},
+  }),
+  freezeRecord({
+    id: 'bluefin-server',
+    product: 'bluefin-server',
+    required: true,
+    // The server publishes the SBOM as a `*.spdx.json` layer inside the OCI
+    // artifact manifest rather than as a separate SPDX referrer. The artifact
+    // digest is signed as part of the publisher's SLSA provenance attestation,
+    // so the SBOM bytes are authentic by association once `verifyImageProvenance`
+    // binds the artifact digest to the projectbluefin/server identity.
+    sbomSource: 'embedded',
+    image: 'ghcr.io/projectbluefin/bluefin-server:latest',
+    certificateIdentityRegexp: '^https://github.com/projectbluefin/server/.github/workflows/[^@]+@refs/.+$',
+    certificateOidcIssuer: 'https://token.actions.githubusercontent.com',
+    packages: {
+      // Reviewed against the published collect_manifest SPDX
+      // (sha256:2747381d…, image sha256:d168f628…): the `linux` name carries
+      // two versions — `freedesktop-sdk.bst:bootstrap/linux-headers.bst`
+      // (6.18.41, the bootstrap headers) and
+      // `freedesktop-sdk.bst:components/linux.bst` (7.2.2, the booted
+      // kernel). The element pin matches the collect_manifest SPDXID-derived
+      // locator (no externalRefs in this plugin's output).
+      kernel: { name: 'linux', element: 'freedesktop-sdk.bst:components/linux.bst', required: true },
+      // systemd lives at `components/_private/systemd-base.bst`; the leading
+      // underscore is part of the element path. Same collect_manifest
+      // SPDXID-derived matching applies.
+      systemd: { name: 'systemd', element: 'freedesktop-sdk.bst:components/_private/systemd-base.bst', required: false },
+    },
   }),
 ])
 

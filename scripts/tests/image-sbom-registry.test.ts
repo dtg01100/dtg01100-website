@@ -112,6 +112,9 @@ const dakotaLinuxElements = JSON.parse(
 const dakotaNvidiaDrivers = JSON.parse(
   readFileSync(join(import.meta.dirname, 'fixtures/dakota-nvidia-drivers.spdx.json'), 'utf8'),
 )
+const bluefinServerSbom = JSON.parse(
+  readFileSync(join(import.meta.dirname, 'fixtures/bluefin-server-collect-manifest.spdx.json'), 'utf8'),
+)
 
 function recordFor(id: string) {
   const record = IMAGE_SBOM_REGISTRY.find(r => r.id === id)
@@ -257,5 +260,61 @@ describe('dakota image references name tags the publisher actually publishes', (
 
   it('pins base dakota to :stable', () => {
     expect(recordFor('dakota').image).toBe('ghcr.io/projectbluefin/dakota:stable')
+  })
+})
+
+describe('bluefin-server registry entry', () => {
+  it('exists with product=bluefin-server and sbomSource=embedded', () => {
+    const entry = recordFor('bluefin-server')
+    expect(entry.product).toBe('bluefin-server')
+    expect(entry.required).toBe(true)
+    expect(entry.sbomSource).toBe('embedded')
+  })
+
+  it('points at ghcr.io/projectbluefin/bluefin-server:latest', () => {
+    const { image } = recordFor('bluefin-server')
+    expect(image).toBe('ghcr.io/projectbluefin/bluefin-server:latest')
+  })
+
+  it('requires cosign provenance from projectbluefin/server', () => {
+    const entry = recordFor('bluefin-server')
+    expect(entry.certificateIdentityRegexp).toContain('projectbluefin/server/.github/workflows/')
+    expect(entry.certificateOidcIssuer).toBe('https://token.actions.githubusercontent.com')
+  })
+
+  it('pins the kernel element to freedesktop-sdk.bst:components/linux.bst', () => {
+    const { packages } = recordFor('bluefin-server')
+    expect(packages.kernel.element).toBe('freedesktop-sdk.bst:components/linux.bst')
+    expect(packages.kernel.required).toBe(true)
+  })
+
+  it('resolves the kernel element against the live collect_manifest SBOM', () => {
+    const { packages } = recordFor('bluefin-server')
+    const result = extractMappedVersions(bluefinServerSbom, { kernel: packages.kernel })
+    expect(result.ambiguous).toEqual([])
+    expect(result.missingRequired).toEqual([])
+    expect(result.values.kernel).toBe('7.2.2')
+  })
+
+  it('is ambiguous for bluefin-server kernel without the element pin', () => {
+    const result = extractMappedVersions(bluefinServerSbom, {
+      kernel: { name: 'linux', required: true },
+    })
+    expect(result.ambiguous).toContain('kernel')
+  })
+
+  it('pins systemd to the FSDK systemd-base element', () => {
+    const { packages } = recordFor('bluefin-server')
+    expect(packages.systemd.element).toBe('freedesktop-sdk.bst:components/_private/systemd-base.bst')
+
+    const result = extractMappedVersions(bluefinServerSbom, { systemd: packages.systemd })
+    expect(result.ambiguous).toEqual([])
+    expect(result.values.systemd).toBe('261.2')
+  })
+
+  it('passes validateImageSbomRegistry with sbomSource allowed', () => {
+    expect(() => validateImageSbomRegistry([
+      recordFor('bluefin-server'),
+    ])).not.toThrow()
   })
 })

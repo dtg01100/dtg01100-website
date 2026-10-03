@@ -255,10 +255,116 @@ export function pullSpdxReferrer(repository, digest, run = execFileSync, fsImpl 
 }
 
 /**
+ * Title annotation key carried on every OCI layer for an OCI 1.1 artifact.
+ */
+const OCI_TITLE_ANNOTATION = 'org.opencontainers.image.title'
+
+/**
+ * Read an OCI artifact manifest and return the layer whose
+ * `org.opencontainers.image.title` annotation ends with `.spdx.json`.
+ *
+ * Some publishers (projectbluefin/server, for example) ship the SBOM as a
+ * layer inside the artifact manifest rather than as a separate SPDX referrer.
+ * The signed provenance over the artifact then authenticates the SBOM bytes by
+ * association, so reading the layer is safe once provenance has been
+ * verified.
+ *
+ * @param {string} imageAtDigest - repository@sha256:... reference
+ * @param {Function} run - execFileSync-compatible function
+ * @returns {{ digest: string, size: number } | undefined}
+ */
+export function findEmbeddedSpdxLayer(imageAtDigest, run = execFileSync) {
+  let raw
+  try {
+    raw = run('oras', ['manifest', 'fetch', imageAtDigest], { encoding: 'utf8' })
+  }
+  catch (err) {
+    const tooling = classifyToolFailure(err, 'oras')
+    if (tooling != null) {
+      throw tooling
+    }
+    if (describesAbsence(err)) {
+      throw new EvidenceError('image-not-found', imageAtDigest, `Cannot fetch manifest for ${imageAtDigest}: ${failureText(err)}`)
+    }
+    throw new ToolingError('tool-failure', 'oras', `oras manifest fetch failed for ${imageAtDigest}: ${failureText(err)}`)
+  }
+  let manifest
+  try {
+    manifest = JSON.parse(raw)
+  }
+  catch (err) {
+    throw new ToolingError('malformed-output', 'oras', `Malformed oras manifest JSON for ${imageAtDigest}: ${err.message}`)
+  }
+  const layers = Array.isArray(manifest?.layers) ? manifest.layers : []
+  const matches = layers.filter((layer) => {
+    const title = layer?.annotations?.[OCI_TITLE_ANNOTATION]
+    return typeof title === 'string' && title.endsWith('.spdx.json')
+  })
+  if (matches.length === 0) {
+    return undefined
+  }
+  if (matches.length > 1) {
+    throw new EvidenceError('ambiguous-sbom', imageAtDigest, `Multiple .spdx.json layers found in ${imageAtDigest}`)
+  }
+  const layer = matches[0]
+  return { digest: layer.digest, size: layer.size }
+}
+
+/**
+ * Pull and parse an SPDX layer embedded inside an OCI artifact.
+ *
+ * @param {string} repository - image repository without tag/digest
+ * @param {string} digest - sha256:... digest of the SPDX layer
+ * @param {Function} run - execFileSync-compatible function
+ * @param {object} fsImpl - fs module (for testing injection)
+ * @returns {object} parsed SPDX document
+ */
+export function pullEmbeddedSpdx(repository, digest, run = execFileSync, fsImpl = fs) {
+  const outputDir = fsImpl.mkdtempSync(path.join(os.tmpdir(), 'website-embedded-sbom-'))
+  try {
+    run('oras', ['blob', 'fetch', `${repository}@${digest}`, '--output', outputDir], { encoding: 'utf8' })
+    const files = fsImpl.readdirSync(outputDir)
+    const jsonFile = files.find(name => name.endsWith('.spdx.json')) ?? files.find(name => name.endsWith('.json'))
+    if (!jsonFile) {
+      throw new EvidenceError('invalid-sbom', repository, `No SPDX JSON layer for ${repository}@${digest}`)
+    }
+    return JSON.parse(fsImpl.readFileSync(path.join(outputDir, jsonFile), 'utf8'))
+  }
+  catch (err) {
+    if (err instanceof EvidenceError || err instanceof ToolingError) {
+      throw err
+    }
+    const tooling = classifyToolFailure(err, 'oras')
+    if (tooling != null) {
+      throw tooling
+    }
+    if (describesAbsence(err) || err instanceof SyntaxError) {
+      throw new EvidenceError('invalid-sbom', repository, `Failed to read SPDX layer ${digest}: ${failureText(err)}`)
+    }
+    throw new ToolingError('tool-failure', 'oras', `oras blob fetch failed for ${repository}@${digest}: ${failureText(err)}`)
+  }
+  finally {
+    fsImpl.rmSync(outputDir, { recursive: true, force: true })
+  }
+}
+
+/**
  * Collect and verify a complete SBOM for an image registry record.
+ *
+ * Two publisher shapes are supported:
+ *   1. The publisher attaches the SBOM as a separate SPDX-typed referrer to
+ *      the image (the standard pattern used by dakota/bluefin). The referrer
+ *      digest is then optionally co-signed with cosign, and the layer is
+ *      pulled from the registry.
+ *   2. The publisher embeds the SBOM as a `*.spdx.json` layer inside the OCI
+ *      artifact manifest itself (projectbluefin/server). The artifact's
+ *      provenance signature then authenticates the SBOM bytes by
+ *      association. Records opt into this shape by setting
+ *      `record.sbomSource === 'embedded'`.
+ *
  * @param {import('./image-sbom-registry.js').ImageSbomRecord} record
  * @param {{ run?: Function, fs?: object }} dependencies
- * @returns {Promise<{ id, image, imageDigest, sbomDigest, checkedAt, sbom }>}
+ * @returns {Promise<{ id, image, imageDigest, sbomDigest, sbomSignature?: 'verified'|'missing', sbomSource: 'referrer'|'embedded', checkedAt, sbom }>}
  */
 export async function collectVerifiedImageSbom(record, dependencies = {}) {
   const run = dependencies.run ?? execFileSync
@@ -267,8 +373,38 @@ export async function collectVerifiedImageSbom(record, dependencies = {}) {
   const imageAtDigest = resolveImageDigest(record.image, run)
   const imageDigest = imageAtDigest.split('@')[1]
 
-  const referrers = discoverReferrers(imageAtDigest, run)
+  const repository = record.image.replace(/[:@].*$/, '')
 
+  if (record.sbomSource === 'embedded') {
+    // Path 2: SBOM embedded as a layer inside the artifact (server shape).
+    // The artifact manifest is signed as part of the publisher's provenance
+    // attestation, so verifying the provenance over the artifact digest
+    // also authenticates the SBOM bytes by association.
+    const embedded = findEmbeddedSpdxLayer(imageAtDigest, run)
+    if (embedded == null) {
+      throw new EvidenceError('missing-sbom', record.image, `No embedded .spdx.json layer found in ${record.image}`)
+    }
+
+    verifyImageProvenance(imageAtDigest, {
+      certificateIdentityRegexp: record.certificateIdentityRegexp,
+      certificateOidcIssuer: record.certificateOidcIssuer,
+    }, run)
+
+    const sbom = pullEmbeddedSpdx(repository, embedded.digest, run, fsImpl)
+
+    return {
+      id: record.id,
+      image: record.image,
+      imageDigest,
+      sbomDigest: embedded.digest,
+      sbomSource: 'embedded',
+      checkedAt: new Date().toISOString(),
+      sbom,
+    }
+  }
+
+  // Path 1: SPDX referrer (dakota/bluefin shape).
+  const referrers = discoverReferrers(imageAtDigest, run)
   const spdxReferrers = referrers.filter(r => r.artifactType === SPDX_ARTIFACT_TYPE)
 
   if (spdxReferrers.length === 0) {
@@ -285,8 +421,6 @@ export async function collectVerifiedImageSbom(record, dependencies = {}) {
     certificateIdentityRegexp: record.certificateIdentityRegexp,
     certificateOidcIssuer: record.certificateOidcIssuer,
   }, run)
-
-  const repository = record.image.replace(/[:@].*$/, '')
 
   // The referrer digest comes from the unsigned discovery listing, and the
   // provenance check above binds the image digest only. Hold the artifact we
@@ -308,6 +442,7 @@ export async function collectVerifiedImageSbom(record, dependencies = {}) {
     imageDigest,
     sbomDigest,
     sbomSignature: hasSignature ? 'verified' : 'missing',
+    sbomSource: 'referrer',
     checkedAt: new Date().toISOString(),
     sbom,
   }

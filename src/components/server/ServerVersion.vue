@@ -1,17 +1,62 @@
 <script setup lang="ts">
+import type { ServerVersions } from '../../composables'
 import { IconGithubCircle } from '@iconify-prerendered/vue-mdi'
+import { computed, onMounted, ref } from 'vue'
+import { getServerVersions } from '../../composables'
 
 const GITHUB_RELEASES_PAGE = 'https://github.com/projectbluefin/server/releases'
+
+const VERSION_LABELS: Record<string, string> = {
+  kernel: 'Kernel',
+  systemd: 'systemd',
+}
+
+const versions = ref<ServerVersions | null>(null)
+
+const versionRows = computed(() => {
+  if (!versions.value || versions.value.status !== 'verified') {
+    return []
+  }
+  return Object.entries(versions.value.packages)
+    .filter(([key]) => key in VERSION_LABELS)
+    .map(([key, value]) => ({
+      label: VERSION_LABELS[key],
+      value,
+    }))
+})
+
+onMounted(async () => {
+  try {
+    versions.value = await getServerVersions()
+  }
+  catch (e) {
+    if (import.meta.env.DEV) {
+      console.warn('[ServerVersion] failed to load versions', e)
+    }
+  }
+})
 </script>
 
 <template>
   <div class="release-widget">
+    <div v-if="versionRows.length > 0" class="version-info">
+      <div v-for="row in versionRows" :key="row.label" class="version-row">
+        <div class="version-label">
+          {{ row.label }}
+        </div>
+        <div class="version-value">
+          {{ row.value }}
+        </div>
+      </div>
+    </div>
     <div class="release-action">
       <div class="action-label">
         Install freedesktop-sdk Server Linux
       </div>
       <p>Choose the release asset for your hardware and follow the installation notes on GitHub.</p>
-      <p>Version details will appear when Bluefin Server publishes a verifiable image SBOM.</p>
+      <p v-if="versionRows.length === 0">
+        Version details will appear when Bluefin Server publishes a verifiable image SBOM.
+      </p>
       <a class="release-link" :href="GITHUB_RELEASES_PAGE" target="_blank" rel="noopener noreferrer">
         <IconGithubCircle />
         View releases on GitHub
@@ -27,6 +72,36 @@ const GITHUB_RELEASES_PAGE = 'https://github.com/projectbluefin/server/releases'
   overflow: hidden;
   background: rgba(var(--color-bg-rgb), 0.55);
   backdrop-filter: blur(8px);
+}
+
+.version-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+}
+
+.version-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.version-label {
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.version-value {
+  color: var(--color-text);
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
 }
 
 .release-action {

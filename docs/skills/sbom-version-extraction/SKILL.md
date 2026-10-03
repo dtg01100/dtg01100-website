@@ -1,14 +1,15 @@
 ---
 name: sbom-version-extraction
-description: Use when editing scripts/lib/spdx-version-extractor.js, scripts/lib/oci-sbom.js, scripts/lib/image-sbom-registry.js, scripts/lib/image-version-audit.js, scripts/lib/verified-image-sbom.js, scripts/lib/sbom-issue-report.js, scripts/lib/sbom-issue-sync.js, scripts/lib/bluefin-version-projection.js, scripts/lib/dakota-version-projection.js, scripts/update-dakota-versions.js, scripts/update-stream-versions.js, scripts/update-image-versions.js, .github/workflows/update-content.yml, or their tests.
+description: Use when editing scripts/lib/spdx-version-extractor.js, scripts/lib/oci-sbom.js, scripts/lib/image-sbom-registry.js, scripts/lib/image-version-audit.js, scripts/lib/verified-image-sbom.js, scripts/lib/sbom-issue-report.js, scripts/lib/sbom-issue-sync.js, scripts/lib/bluefin-version-projection.js, scripts/lib/dakota-version-projection.js, scripts/lib/server-version-projection.js, scripts/update-dakota-versions.js, scripts/update-stream-versions.js, scripts/update-image-versions.js, .github/workflows/update-content.yml, or their tests.
 ---
 
 # SBOM version extraction
 
 ## Overview
 
-Version data for Dakota (`public/dakota-versions.json`) and Bluefin
-(`public/stream-versions.yml`) is derived exclusively from SPDX SBOMs attached
+Version data for Dakota (`public/dakota-versions.json`), Bluefin
+(`public/stream-versions.yml`) and Bluefin Server
+(`public/server-versions.json`) is derived exclusively from SPDX SBOMs attached
 to published GHCR images. Editing the scripts that drive this pipeline requires
 understanding how BuildStream SBOMs differ from Syft SBOMs and how ambiguity is
 handled.
@@ -53,18 +54,25 @@ generated. Do not use for Wolves version data; that lives in
 
 | File | Role |
 |---|---|
-| `scripts/lib/spdx-version-extractor.js` | Core extraction: `normalizeVersion`, `packageElement`, `extractMappedVersions` |
+| `scripts/lib/spdx-version-extractor.js` | Core extraction: `normalizeVersion`, `packageElement`, `packageElementMatches`, `canonicalElementForm`, `extractMappedVersions` |
 | `scripts/lib/bluefin-version-projection.js` | Bluefin projection: `projectBluefinStreams`, `normalizeUserVersion` |
+| `scripts/lib/dakota-version-projection.js` | Dakota projection: `projectDakotaVersions` |
+| `scripts/lib/server-version-projection.js` | Bluefin Server projection: `projectServerVersions` |
 | `scripts/lib/oci-sbom.js` | OCI layer: `pullImageSbom`, `compareVersions`, `spdxPackageVersion` |
+| `scripts/lib/verified-image-sbom.js` | OCI collector: `collectVerifiedImageSbom`, `findEmbeddedSpdxLayer`, `pullSpdxReferrer`, `resolveImageDigest`, `discoverReferrers`, `verifyImageProvenance`, `verifySbomSignature` |
+| `scripts/lib/image-version-audit.js` | Audit orchestration: `verifyRegistry`, `productStatus`, `annotateLastSuccessful`, `assertExplainedFieldLoss`, `writeOutputsAtomically` |
 | `scripts/update-image-versions.js` | Unified verifier, projection guard, audit writer, and atomic output promotion |
 | `scripts/update-dakota-versions.js` | Compatibility alias that delegates to the unified updater |
 | `scripts/update-stream-versions.js` | Compatibility alias that delegates to the unified updater |
-| `scripts/tests/spdx-version-extractor.test.ts` | Extractor unit tests |
+| `scripts/tests/spdx-version-extractor.test.ts` | Extractor unit tests (including cross-plugin SPDXID fallback) |
 | `scripts/tests/bluefin-version-projection.test.ts` | Projection unit tests |
+| `scripts/tests/server-version-projection.test.ts` | Bluefin Server projection unit tests |
 | `scripts/tests/update-dakota-versions.test.ts` | Dakota updater integration tests |
 | `scripts/tests/update-stream-versions.test.ts` | Bluefin updater tests |
+| `scripts/tests/verified-image-sbom.test.ts` | Collector unit tests (including embedded-SBOM path) |
 | `scripts/tests/fixtures/dakota-linux-elements.spdx.json` | BuildStream SPDX fixture (historical/unit tests) |
 | `scripts/tests/fixtures/dakota-stable-linux-elements.spdx.json` | Live BuildStream SPDX fixture (`core/linux-fdsdk.bst` pin) |
+| `scripts/tests/fixtures/bluefin-server-collect-manifest.spdx.json` | Live Bluefin Server collect_manifest SPDX fixture (`components/linux.bst` pin, no `externalRefs`) |
 
 ## Critical correctness rules
 
@@ -147,11 +155,54 @@ not a BuildStream image, so no `.bst` element exists to pin).
 `version`; SPDX uses `versionInfo`. The fallback is necessary for Syft
 compatibility. Do not normalise or strip raw values in the shared extractor.
 
+### Cross-plugin element matching via SPDXID fallback
+
+BuildStream SBOMs emit the bst-element locator in two distinct shapes:
+
+  - `buildstream-sbom` plugin keeps each segment verbatim and exposes the
+    locator through `externalRefs[].referenceLocator`.
+  - `buildstream-plugins-community collect_manifest` plugin (used by
+    `projectbluefin/server`) strips `.bst`, `/`, and `:`, and encodes the
+    locator only in the SPDXID prefix:
+    `SPDXRef-freedesktop-sdk-components-linux-0` ↔
+    `freedesktop-sdk.bst:components/linux.bst`.
+
+`extractMappedVersions` matches against both shapes through
+`packageElementMatches`: exact `externalRefs[].referenceLocator` for the
+externalRefs-backed plugin, and a flat canonical form (`canonicalElementForm`)
+for the collect_manifest plugin. A registry `element` selector authored in
+`project:path/element.bst` form resolves against either plugin without a
+per-record flag.
+
 ### `checkedAt` in stream-versions.yml
 
 `stream-versions.yml` must include a top-level `checkedAt` ISO timestamp even
 though the main site no longer renders Bluefin stream cards. The unified updater
 still projects and promotes Bluefin and Dakota outputs atomically.
+
+### Bluefin Server publishes SBOMs as embedded layers (projectbluefin/server)
+
+The server's OCI artifact (`ghcr.io/projectbluefin/bluefin-server`) ships the
+SPDX document as a layer inside the artifact manifest rather than as a separate
+SPDX-typed referrer. Records opt into the embedded shape with
+`record.sbomSource === 'embedded'`. The collector:
+
+  1. Verifies SLSA provenance over the artifact digest (the SBOM bytes are
+     authentic by association with the signed manifest).
+  2. Reads the artifact manifest via `oras manifest fetch` and locates the
+     `*.spdx.json` layer by its `org.opencontainers.image.title` annotation.
+  3. Pulls the layer via `oras blob fetch` and parses the SPDX document.
+
+Multiple `.spdx.json` layers in the same manifest surface as
+`ambiguous-sbom`; a missing layer surfaces as `missing-sbom`.
+
+### `checkedAt` in server-versions.json
+
+`public/server-versions.json` carries the same `checkedAt`, `status`, `sources`,
+and `packages` shape as `public/dakota-versions.json`, but without the `isos`
+metadata (the server publishes an OCI artifact and a GitHub release set, not
+disk images). The unified updater projects the `bluefin-server` registry
+entry into this file alongside the Bluefin and Dakota outputs.
 
 ## Fixture structure
 

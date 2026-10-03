@@ -31,6 +31,7 @@ import {
   verifyRegistry,
   writeOutputsAtomically,
 } from './lib/image-version-audit.js'
+import { projectServerVersions } from './lib/server-version-projection.js'
 import { collectVerifiedImageSbom, ToolingError } from './lib/verified-image-sbom.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -62,10 +63,12 @@ function readGenerated(filePath, parse) {
 export async function updateImageVersions({ checkOnly = false } = {}) {
   const streamsOutPath = path.join(projectRoot, 'public', 'stream-versions.yml')
   const dakotaOutPath = path.join(projectRoot, 'public', 'dakota-versions.json')
+  const serverOutPath = path.join(projectRoot, 'public', 'server-versions.json')
   const auditOutPath = path.join(projectRoot, ...AUDIT_RELATIVE_PATH.split('/'))
 
   const previousStreams = readGenerated(streamsOutPath, raw => loadYaml(raw))
   const previousDakota = readGenerated(dakotaOutPath, raw => JSON.parse(raw))
+  const previousServer = readGenerated(serverOutPath, raw => JSON.parse(raw))
   const previousAudit = readGenerated(auditOutPath, raw => JSON.parse(raw))
 
   // Single registry verification for all products
@@ -107,6 +110,9 @@ export async function updateImageVersions({ checkOnly = false } = {}) {
       baseline: previousDakota?.packages?.baseline ?? DAKOTA_BASELINE,
     })
 
+    // Project Bluefin Server versions from the same registry audit.
+    const serverVersions = projectServerVersions(result)
+
     // A published field may only disappear because the audit says its evidence
     // did. Anything else means the verifier broke, and a broken verifier must
     // not promote its own output.
@@ -136,12 +142,21 @@ export async function updateImageVersions({ checkOnly = false } = {}) {
       audit: result,
       ignore: ['baseline'],
     })
+    assertExplainedFieldLoss({
+      label: 'public/server-versions.json packages',
+      product: 'bluefin-server',
+      previous: previousServer?.packages,
+      next: serverVersions.packages,
+      nextStatus: serverVersions.status,
+      audit: result,
+    })
 
     // Write all outputs atomically from project root
     writeOutputsAtomically(
       {
         'public/stream-versions.yml': bluefinStreams,
         'public/dakota-versions.json': dakotaVersions,
+        'public/server-versions.json': serverVersions,
         [AUDIT_RELATIVE_PATH]: result,
       },
       projectRoot,
@@ -149,6 +164,7 @@ export async function updateImageVersions({ checkOnly = false } = {}) {
 
     console.info('Wrote public/stream-versions.yml')
     console.info('Wrote public/dakota-versions.json')
+    console.info('Wrote public/server-versions.json')
     console.info(`Wrote ${AUDIT_RELATIVE_PATH}`)
   }
 

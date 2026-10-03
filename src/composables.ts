@@ -18,6 +18,13 @@ export interface DakotaVersions {
   packages: Record<string, string>
 }
 
+export interface ServerVersions {
+  checkedAt: string
+  status: 'verified' | 'unavailable'
+  sources: Array<{ id: string, image: string, imageDigest: string, sbomDigest: string }>
+  packages: Record<string, string>
+}
+
 let versionsPromise: Promise<DakotaVersions> | null = null
 
 function fetchVersionsOnce(): Promise<DakotaVersions> {
@@ -38,6 +45,28 @@ function fetchVersionsOnce(): Promise<DakotaVersions> {
  */
 export async function getDakotaVersions(): Promise<DakotaVersions> {
   return fetchVersionsOnce()
+}
+
+let serverVersionsPromise: Promise<ServerVersions> | null = null
+
+function fetchServerVersionsOnce(): Promise<ServerVersions> {
+  if (!serverVersionsPromise) {
+    serverVersionsPromise = (async () => {
+      const res = await fetch(`${import.meta.env.BASE_URL}server-versions.json`)
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`)
+      }
+      return res.json()
+    })()
+  }
+  return serverVersionsPromise
+}
+
+/**
+ * Fetches server-versions.json once and caches the result.
+ */
+export async function getServerVersions(): Promise<ServerVersions> {
+  return fetchServerVersionsOnce()
 }
 
 /**
