@@ -26,12 +26,12 @@ export const DEFAULT_LOCALE = 'en-US'
  *
  * Two classes of entry live here:
  *
- * - **Single-bundle region tags** (`ar-EG`, `es-ES`, `hi-IN`, `id-ID`,
- *   `it-IT`, `pl-PL`, `sv-SE`, `tr-TR`): a region the browser
- *   reports but the bundle does not ship verbatim, with exactly one
- *   bundled locale sharing the base language. Routing them to that base
- *   bundle is unambiguous — there is no sibling to pick wrong — and is
- *   the same case the Simplified-Chinese aliases below close.
+ * - **Single-bundle region tags** (`ar-EG`, `cs-CZ`, `es-ES`, `hi-IN`,
+ *   `id-ID`, `it-IT`, `pl-PL`, `sv-SE`, `tr-TR`): a region the browser
+ *   reports but the bundle does not ship verbatim, where the bare base
+ *   tag itself is bundled (`ar.json`, `cs.json`, ...) and is the only
+ *   bundle for that language. Routing them to that base bundle is
+ *   unambiguous — there is no sibling to pick wrong.
  * - **Simplified-Chinese region tags** (`zh-CN`, `zh-SG`): a browser with
  *   no Simplified-Chinese bundle of its own must reach the only
  *   Simplified-Chinese bundle (`zh-Hans`). Traditional-Chinese regions
@@ -40,14 +40,18 @@ export const DEFAULT_LOCALE = 'en-US'
  *   falls to the default. Collapsing any of them onto another Chinese
  *   bundle would pick the wrong orthography for a real user.
  *
- * Adding more aliases is allowed only when the alias target is the *only*
- * bundle the source language ships. Generic subtag fallback (bare `zh` →
+ * Adding a single-bundle alias is allowed only when the bare base tag is
+ * itself bundled and is the only bundle the source language ships. Region
+ * siblings of a region-tagged bundle (`de-AT` with only `de-DE.json`,
+ * `fr-CA` with only `fr-FR.json`) are not aliased: the bundle encodes a
+ * specific region, not the language. Generic subtag fallback (bare `zh` →
  * `zh-Hans`) is intentionally absent: it lets a single browser tag resolve
  * through any of N siblings, which is how a bundle gets rendered in the
  * wrong script for a real user.
  */
 export const LOCALE_ALIASES: Readonly<Record<string, string>> = {
   'ar-EG': 'ar',
+  'cs-CZ': 'cs',
   'es-ES': 'es',
   'hi-IN': 'hi',
   'id-ID': 'id',

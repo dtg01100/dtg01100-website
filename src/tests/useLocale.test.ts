@@ -78,6 +78,7 @@ describe('useLocale', () => {
       // these entries a region-tag browser for any of these languages falls
       // to en-US even though ?lang=<base> works.
       expect(resolveLocale('ar-EG')).toBe('ar')
+      expect(resolveLocale('cs-CZ')).toBe('cs')
       expect(resolveLocale('es-ES')).toBe('es')
       expect(resolveLocale('hi-IN')).toBe('hi')
       expect(resolveLocale('id-ID')).toBe('id')
@@ -107,10 +108,10 @@ describe('useLocale', () => {
 
     it('does not introduce subtag fallback for other languages', () => {
       // The policy from content-maintenance/SKILL.md: a region-tag file
-      // (`sk-SK`) is not picked for a bare `sk` browser, and a multi-bundle
-      // base (`de-DE` + a hypothetical `de-AT`) is not collapsed onto a
-      // single bundle. Single-bundle regions that need routing (ar/es/hi/
-      // id/it/pl/sv/tr, plus uk-UA from PR #925) get an explicit
+      // (`sk-SK`) is not picked for a bare `sk` browser, and a sibling
+      // region (`de-AT`, `fr-CA`) is not routed onto a region-tagged bundle
+      // (`de-DE`, `fr-FR`). Only regions whose bare base tag is itself
+      // bundled (ar/cs/es/hi/id/it/pl/sv/tr) get an explicit
       // LOCALE_ALIASES entry, not generic subtag fallback. resolveLocale
       // honours that — only the explicit LOCALE_ALIASES entries get a
       // second chance.
