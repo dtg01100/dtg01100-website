@@ -40,6 +40,7 @@ jobs:
             public/dakota-versions.json
             public/flickr-photos.json
             public/experiences
+            public/server-versions.json
             src/assets/svg/growth_bluefins.svg
             .cache/website-live-data/sbom-audit.json
           key: website-live-data-
@@ -53,7 +54,9 @@ jobs:
       # has ISO downloads and hardware baseline committed in git. Restoring from
       # cache overwrites newly committed albums or ISO updates (like alpha6) with
       # the stale cached file, causing update:image-versions to carry forward old ISOs.
-      # Restore both tracked files from git before running refresh.
+      # Restore both tracked files from git before running refresh. server-versions.json
+      # has no committed fallback today, so previous-run state is the only source
+      # of `previousServer` (#921 review).
       - name: Restore tracked catalogue and dakota metadata
         run: git checkout HEAD -- public/experiences/catalogue.json public/dakota-versions.json
 
@@ -98,6 +101,7 @@ jobs:
             public/dakota-versions.json
             public/flickr-photos.json
             public/experiences
+            public/server-versions.json
             src/assets/svg/growth_bluefins.svg
             .cache/website-live-data/sbom-audit.json
           key: website-live-data-${{ github.run_id }}

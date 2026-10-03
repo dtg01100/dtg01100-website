@@ -188,10 +188,13 @@ SPDX-typed referrer. Records opt into the embedded shape with
 `record.sbomSource === 'embedded'`. The collector:
 
   1. Verifies SLSA provenance over the artifact digest (the SBOM bytes are
-     authentic by association with the signed manifest).
+     authentic by association with the signed manifest). This runs *before*
+     any `oras manifest fetch` so the manifest read is the one the
+     signature attests to.
   2. Reads the artifact manifest via `oras manifest fetch` and locates the
      `*.spdx.json` layer by its `org.opencontainers.image.title` annotation.
-  3. Pulls the layer via `oras blob fetch` and parses the SPDX document.
+  3. Pulls the layer via `oras blob fetch --output <file>` (the flag takes
+     a file path, not a directory) and parses the SPDX document.
 
 Multiple `.spdx.json` layers in the same manifest surface as
 `ambiguous-sbom`; a missing layer surfaces as `missing-sbom`.

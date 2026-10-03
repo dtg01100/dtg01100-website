@@ -667,6 +667,7 @@ describe('collectVerifiedImageSbom — embedded SBOM layer', () => {
 
     const run = vi.fn()
       .mockReturnValueOnce(JSON.stringify({ digest: SERVER_IMAGE_DIGEST }))
+      .mockReturnValueOnce('') // cosign verify-attestation (provenance runs first)
       .mockReturnValueOnce(JSON.stringify(SERVER_MANIFEST))
       .mockReturnValueOnce('')
       .mockReturnValueOnce('')
@@ -706,6 +707,7 @@ describe('collectVerifiedImageSbom — embedded SBOM layer', () => {
 
     const run = vi.fn()
       .mockReturnValueOnce(JSON.stringify({ digest: SERVER_IMAGE_DIGEST }))
+      .mockReturnValueOnce('') // cosign verify-attestation (provenance runs first)
       .mockReturnValueOnce(JSON.stringify(manifestWithoutEmbedded))
 
     await expect(collectVerifiedImageSbom(SERVER_RECORD, { run, fs: mockFs })).rejects.toMatchObject({
@@ -737,6 +739,7 @@ describe('collectVerifiedImageSbom — embedded SBOM layer', () => {
 
     const run = vi.fn()
       .mockReturnValueOnce(JSON.stringify({ digest: SERVER_IMAGE_DIGEST }))
+      .mockReturnValueOnce('') // cosign verify-attestation (provenance runs first)
       .mockReturnValueOnce(JSON.stringify(ambiguousManifest))
 
     await expect(collectVerifiedImageSbom(SERVER_RECORD, { run, fs: mockFs })).rejects.toMatchObject({

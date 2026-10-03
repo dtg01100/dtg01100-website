@@ -320,15 +320,16 @@ export function findEmbeddedSpdxLayer(imageAtDigest, run = execFileSync) {
  * @returns {object} parsed SPDX document
  */
 export function pullEmbeddedSpdx(repository, digest, run = execFileSync, fsImpl = fs) {
+  // `oras blob fetch --output` takes a file path (or `-` for stdout); it
+  // does `os.Create(outputPath)` on whatever it gets, and rejects a
+  // directory with "is a directory". Write the layer to a tmpfile inside
+  // a mkdtemp dir, then read back the only JSON file in that dir
+  // (#921 review).
   const outputDir = fsImpl.mkdtempSync(path.join(os.tmpdir(), 'website-embedded-sbom-'))
+  const outputPath = path.join(outputDir, 'sbom.spdx.json')
   try {
-    run('oras', ['blob', 'fetch', `${repository}@${digest}`, '--output', outputDir], { encoding: 'utf8' })
-    const files = fsImpl.readdirSync(outputDir)
-    const jsonFile = files.find(name => name.endsWith('.spdx.json')) ?? files.find(name => name.endsWith('.json'))
-    if (!jsonFile) {
-      throw new EvidenceError('invalid-sbom', repository, `No SPDX JSON layer for ${repository}@${digest}`)
-    }
-    return JSON.parse(fsImpl.readFileSync(path.join(outputDir, jsonFile), 'utf8'))
+    run('oras', ['blob', 'fetch', `${repository}@${digest}`, '--output', outputPath], { encoding: 'utf8' })
+    return JSON.parse(fsImpl.readFileSync(outputPath, 'utf8'))
   }
   catch (err) {
     if (err instanceof EvidenceError || err instanceof ToolingError) {
@@ -379,16 +380,20 @@ export async function collectVerifiedImageSbom(record, dependencies = {}) {
     // Path 2: SBOM embedded as a layer inside the artifact (server shape).
     // The artifact manifest is signed as part of the publisher's provenance
     // attestation, so verifying the provenance over the artifact digest
-    // also authenticates the SBOM bytes by association.
-    const embedded = findEmbeddedSpdxLayer(imageAtDigest, run)
-    if (embedded == null) {
-      throw new EvidenceError('missing-sbom', record.image, `No embedded .spdx.json layer found in ${record.image}`)
-    }
-
+    // also authenticates the SBOM bytes by association. Verify
+    // provenance *before* reading the manifest so the security argument
+    // ("the SBOM bytes are authentic by association with the signed
+    // manifest") holds — the manifest we then read is the one the
+    // signature attests to (#921 review).
     verifyImageProvenance(imageAtDigest, {
       certificateIdentityRegexp: record.certificateIdentityRegexp,
       certificateOidcIssuer: record.certificateOidcIssuer,
     }, run)
+
+    const embedded = findEmbeddedSpdxLayer(imageAtDigest, run)
+    if (embedded == null) {
+      throw new EvidenceError('missing-sbom', record.image, `No embedded .spdx.json layer found in ${record.image}`)
+    }
 
     const sbom = pullEmbeddedSpdx(repository, embedded.digest, run, fsImpl)
 

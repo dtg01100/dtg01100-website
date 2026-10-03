@@ -6,6 +6,8 @@
  *   foundBy?: string,
  *   required: boolean
  * }} ImageSbomPackageRecord
+ */
+
 /**
  * @typedef {{
  *   id: string,

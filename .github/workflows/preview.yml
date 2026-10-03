@@ -40,6 +40,7 @@ jobs:
             public/dakota-versions.json
             public/flickr-photos.json
             public/experiences
+            public/server-versions.json
             src/assets/svg/growth_bluefins.svg
             .cache/website-live-data/sbom-audit.json
           key: website-live-data-
