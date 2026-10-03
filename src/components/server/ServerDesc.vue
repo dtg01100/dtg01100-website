@@ -33,10 +33,16 @@ const { isLoaded } = useFadeInUp()
 }
 
 .hero-desc {
-  font-size: 1.4rem;
-  line-height: 1.25;
+  font-size: 1.6rem;
+  line-height: 1.5;
   color: var(--color-text-light);
   margin: 0 0 6px 0;
+}
+
+@media (max-width: 640px) {
+  .server-desc {
+    text-align: left;
+  }
 }
 
 strong {
