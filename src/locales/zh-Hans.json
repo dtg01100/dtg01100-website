@@ -83,7 +83,6 @@
   "TryBluefin": {
     "Tag": "试用",
     "Title": "Bluefin",
-    "LegacyDownloads": "较旧的 Fedora 版本[仍可下载](https://docs.projectbluefin.io/downloads/)，但不建议新用户使用。",
     "Wolves": {
       "Cards": {
         "AlphaBadge": "⚠️ Alpha.",

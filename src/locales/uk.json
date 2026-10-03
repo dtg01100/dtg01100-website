@@ -83,7 +83,6 @@
   "TryBluefin": {
     "Tag": "Спробуйте",
     "Title": "Bluefin",
-    "LegacyDownloads": "Старіші версії на базі Fedora [все ще можна завантажити](https://docs.projectbluefin.io/downloads/), але для нових користувачів вони не рекомендовані.",
     "Wolves": {
       "Cards": {
         "AlphaBadge": "⚠️ Альфа.",

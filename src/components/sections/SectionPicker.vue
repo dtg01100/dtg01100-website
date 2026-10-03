@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { MessageSchema } from '../../locales/schema'
+import { load } from 'js-yaml'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getDakotaVersions } from '../../composables'
 
-import { renderMarkdownInline } from '../../utils/markdown'
 import ProductVersionCard from '../common/ProductVersionCard.vue'
 import SceneVisibilityChecker from '../common/SceneVisibilityChecker.vue'
 
@@ -13,6 +13,7 @@ const { t } = useI18n<MessageSchema>({
 })
 
 const dakotaVersions = ref<Awaited<ReturnType<typeof getDakotaVersions>> | null>(null)
+const classicStream = ref<Record<string, string> | null>(null)
 
 // Labels mirror DakotaVersionChips.vue so every surface names a package the same way.
 const PACKAGE_LABELS: Record<string, string> = {
@@ -28,6 +29,7 @@ const PACKAGE_LABELS: Record<string, string> = {
 // Kernel/init first, then graphics, then desktop. Every key here must be
 // resolvable from the image SBOM — see scripts/lib/image-sbom-registry.js.
 const DAKOTA_KEYS = ['kernel', 'systemd', 'bootc', 'mesa', 'nvidia', 'gnome', 'pipewire']
+const CLASSIC_KEYS = ['base', 'kernel', 'systemd', 'mesa', 'gnome', 'pipewire']
 
 async function loadVersions() {
   try {
@@ -39,6 +41,51 @@ async function loadVersions() {
     }
   }
 }
+
+async function loadClassicVersions() {
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL}stream-versions.yml`)
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+    const streams = load(await response.text()) as { stable?: Record<string, string> } | null
+    classicStream.value = streams?.stable ?? null
+  }
+  catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn('[SectionPicker] failed to load Classic versions', error)
+    }
+  }
+}
+
+const classicRows = computed(() => {
+  const stream = classicStream.value
+  if (stream?.status !== 'verified') {
+    return []
+  }
+  return CLASSIC_KEYS
+    .filter(key => stream[key])
+    .map(key => ({ label: key === 'base' ? 'Base OS' : PACKAGE_LABELS[key] ?? key, value: stream[key] }))
+})
+
+const classicDownloads = computed(() => [
+  {
+    title: t('TryBluefin.Wolves.Cards.Classic'),
+    description: t('TryBluefin.Wolves.Cards.ClassicDescription'),
+    image: 'characters/leaping.webp',
+    wordmark: 'brands/bluefin-classic-logo-dark.svg',
+    href: 'https://docs.projectbluefin.io/downloads/',
+    versionRows: classicRows.value
+  },
+  {
+    title: t('TryBluefin.Wolves.Cards.Lts'),
+    description: t('TryBluefin.Wolves.Cards.LtsDescription'),
+    image: 'characters/achillobator.webp',
+    wordmark: 'brands/bluefin-lts-logo-dark.svg',
+    badgeTitle: t('TryBluefin.Wolves.Cards.ComingSoonBadge'),
+    versionRows: []
+  }
+])
 
 const dakotaRows = computed(() => {
   const v = dakotaVersions.value
@@ -81,6 +128,7 @@ const downloads = computed(() => [
 ])
 
 onMounted(loadVersions)
+onMounted(loadClassicVersions)
 </script>
 
 <template>
@@ -92,39 +140,64 @@ onMounted(loadVersions)
         </div>
         <h2>{{ t("TryBluefin.Title") }}</h2>
       </div>
-      <p
-        class="legacy-download-note"
-        v-html="renderMarkdownInline(t('TryBluefin.LegacyDownloads'))"
-      />
-
-      <div class="wolves-download-grid">
+      <div class="classic-download-grid">
         <ProductVersionCard
-          v-for="download in downloads"
+          v-for="download in classicDownloads"
           :key="download.title"
           :title="download.title"
           :description="download.description"
           :image="download.image"
+          :wordmark="download.wordmark"
           :href="download.href"
           :badge-title="download.badgeTitle"
-          :badge-sub="download.badgeSub"
           :version-rows="download.versionRows"
         />
       </div>
+
+      <section class="next-generation-section" aria-labelledby="next-generation-title">
+        <div class="picker-header">
+          <h2 id="next-generation-title">
+            {{ t('NextGeneration.Title') }}
+          </h2>
+          <span class="next-generation-description">{{ t('NextGeneration.Description') }}</span>
+        </div>
+        <div class="wolves-download-grid">
+          <ProductVersionCard
+            v-for="download in downloads"
+            :key="download.title"
+            :title="download.title"
+            :description="download.description"
+            :image="download.image"
+            :href="download.href"
+            :badge-title="download.badgeTitle"
+            :badge-sub="download.badgeSub"
+            :version-rows="download.versionRows"
+          />
+        </div>
+      </section>
     </div>
     <SceneVisibilityChecker name="#scene-picker" />
   </section>
 </template>
 
 <style scoped lang="scss">
-@use '../../style/setup/fonts';
+.classic-download-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
 
-.legacy-download-note :deep(a) {
-  @include fonts.font(700);
-  color: var(--color-blue-light);
+.next-generation-section {
+  margin-top: 80px;
+}
 
-  &:hover {
-    text-decoration: none;
-  }
+.next-generation-description {
+  display: block;
+  font-size: 1.6rem;
+  line-height: 1.6;
+  color: var(--color-text-light);
+  margin-bottom: 30px;
 }
 
 .wolves-download-grid {
@@ -134,6 +207,7 @@ onMounted(loadVersions)
 }
 
 @media (max-width: 956px) {
+  .classic-download-grid,
   .wolves-download-grid {
     grid-template-columns: 1fr;
   }

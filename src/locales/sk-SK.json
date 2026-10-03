@@ -83,7 +83,6 @@
   "TryBluefin": {
     "Tag": "Vyskúšajte",
     "Title": "Bluefin",
-    "LegacyDownloads": "Staršie verzie založené na Fedore sú [naďalej dostupné na stiahnutie](https://docs.projectbluefin.io/downloads/), ale novým používateľom ich neodporúčame.",
     "Wolves": {
       "Cards": {
         "AlphaBadge": "⚠️ Alfa.",

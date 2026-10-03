@@ -83,7 +83,6 @@
   "TryBluefin": {
     "Tag": "Coba",
     "Title": "Bluefin",
-    "LegacyDownloads": "Versi lama berbasis Fedora [masih tersedia untuk diunduh](https://docs.projectbluefin.io/downloads/), tetapi tidak direkomendasikan bagi pengguna baru.",
     "Wolves": {
       "Cards": {
         "AlphaBadge": "⚠️ Alfa.",
