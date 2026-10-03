@@ -166,10 +166,11 @@ new-locale addition, so the `SUPPORTED_LOCALES` edit above is required.
 
 The filename tag is matched exactly. `App.vue`, `DakotaApp.vue`, and
 `ServerApp.vue` select a locale only when `?lang=` or `navigator.language`
-equals an available tag, with no language-subtag fallback: a bare-language
-file (`cs`) is not picked for a `cs-CZ` browser, and a region file (`sk-SK`)
-is not picked for a bare `sk` browser. Keep the tag the issue names; changing
-the matching is a runtime change, not locale content.
+equals an available tag, with no language-subtag fallback: a region-tag file
+(`sk-SK`) is not picked for a bare `sk` browser, and a multi-bundle base
+(`de-DE` plus a hypothetical `de-AT`) is not collapsed onto the wrong
+sibling. Keep the tag the issue names; changing the matching is a runtime
+change, not locale content.
 
 The one carve-out from "no fallback" lives in `src/composables/useLocale.ts`
 as the `LOCALE_ALIASES` map and the `resolveLocale()` function. Aliases are

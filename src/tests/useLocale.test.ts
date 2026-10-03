@@ -106,15 +106,18 @@ describe('useLocale', () => {
     })
 
     it('does not introduce subtag fallback for other languages', () => {
-      // The policy from content-maintenance/SKILL.md: a bare-language file
-      // (`cs`) is not picked for a `cs-CZ` browser, and a region file
-      // (`sk-SK`) is not picked for a bare `sk` browser. resolveLocale
+      // The policy from content-maintenance/SKILL.md: a region-tag file
+      // (`sk-SK`) is not picked for a bare `sk` browser, and a multi-bundle
+      // base (`de-DE` + a hypothetical `de-AT`) is not collapsed onto a
+      // single bundle. Single-bundle regions that need routing (ar/es/hi/
+      // id/it/pl/sv/tr, plus uk-UA from PR #925) get an explicit
+      // LOCALE_ALIASES entry, not generic subtag fallback. resolveLocale
       // honours that — only the explicit LOCALE_ALIASES entries get a
       // second chance.
-      expect(resolveLocale('cs-CZ')).toBe(DEFAULT_LOCALE)
       expect(resolveLocale('sk')).toBe(DEFAULT_LOCALE)
-      expect(resolveLocale('de')).toBe(DEFAULT_LOCALE)
-      expect(resolveLocale('fr')).toBe(DEFAULT_LOCALE)
+      expect(resolveLocale('de-AT')).toBe(DEFAULT_LOCALE)
+      expect(resolveLocale('fr-CA')).toBe(DEFAULT_LOCALE)
+      expect(resolveLocale('ja')).toBe(DEFAULT_LOCALE)
     })
 
     it('falls back to the default locale when the tag has no match', () => {
