@@ -292,7 +292,14 @@ export async function collectVerifiedImageSbom(record, dependencies = {}) {
   // provenance check above binds the image digest only. Hold the artifact we
   // are about to read to the same publisher identity before its bytes are
   // trusted.
+  //
+  // Whether a signature is *listed* also comes from that unsigned listing, so
+  // a record whose publisher already signs must not fall back to warn-only:
+  // an unsigned referrer there is a downgrade and sanitizes the fields.
   const hasSignature = Array.isArray(sbomReferrer.referrers) && sbomReferrer.referrers.length > 0
+  if (!hasSignature && record.requireSbomSignature === true) {
+    throw new EvidenceError('missing-sbom-signature', record.image, `SPDX referrer ${sbomDigest} for ${record.image} carries no publisher signature but the registry requires one`)
+  }
   if (hasSignature) {
     verifySbomSignature(repository, sbomDigest, {
       certificateIdentityRegexp: record.certificateIdentityRegexp,

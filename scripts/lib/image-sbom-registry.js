@@ -12,6 +12,7 @@
  *   product: 'bluefin'|'dakota',
  *   required: boolean,
  *   pendingSbom?: boolean,
+ *   requireSbomSignature?: boolean,
  *   image: string,
  *   certificateIdentityRegexp: string,
  *   certificateOidcIssuer: string,
@@ -74,6 +75,9 @@ export function validateImageSbomRegistry(records) {
     assert(isRecord(record.packages), `image registry id "${record.id}" must define packages`)
     if (record.pendingSbom !== undefined) {
       assert(typeof record.pendingSbom === 'boolean', `image registry id "${record.id}" must define pendingSbom as a boolean`)
+    }
+    if (record.requireSbomSignature !== undefined) {
+      assert(typeof record.requireSbomSignature === 'boolean', `image registry id "${record.id}" must define requireSbomSignature as a boolean`)
     }
 
     if (Object.keys(record.packages).length === 0) {
@@ -178,6 +182,9 @@ export const IMAGE_SBOM_REGISTRY = Object.freeze([
     image: 'ghcr.io/projectbluefin/dakota:stable',
     certificateIdentityRegexp: '^https://github.com/projectbluefin/dakota/.github/workflows/[^@]+@refs/.+$',
     certificateOidcIssuer: 'https://token.actions.githubusercontent.com',
+    // The dakota publisher already signs its SPDX referrers, so an unsigned
+    // one is a downgrade, not a transition state.
+    requireSbomSignature: true,
     packages: {
       // Reviewed against the published SPDX (sha256:b70ac4f2…) for image
       // sha256:ddab2e2d…: `linux` also appears as bootstrap headers (6.18.x)
@@ -200,6 +207,9 @@ export const IMAGE_SBOM_REGISTRY = Object.freeze([
     image: 'ghcr.io/projectbluefin/dakota-nvidia:stable',
     certificateIdentityRegexp: '^https://github.com/projectbluefin/dakota/.github/workflows/[^@]+@refs/.+$',
     certificateOidcIssuer: 'https://token.actions.githubusercontent.com',
+    // The dakota publisher already signs its SPDX referrers, so an unsigned
+    // one is a downgrade, not a transition state.
+    requireSbomSignature: true,
     packages: {
       // Mapping reviewed against the published BuildStream SPDX
       // (sha256:6162d4e8…) for image sha256:a677569e…: `NVIDIA-Linux-x86`
@@ -218,6 +228,9 @@ export const IMAGE_SBOM_REGISTRY = Object.freeze([
     image: 'ghcr.io/projectbluefin/dakota-gaming:stable',
     certificateIdentityRegexp: '^https://github.com/projectbluefin/dakota/.github/workflows/[^@]+@refs/.+$',
     certificateOidcIssuer: 'https://token.actions.githubusercontent.com',
+    // The dakota publisher already signs its SPDX referrers, so an unsigned
+    // one is a downgrade, not a transition state.
+    requireSbomSignature: true,
     packages: {},
   }),
   freezeRecord({
@@ -228,6 +241,9 @@ export const IMAGE_SBOM_REGISTRY = Object.freeze([
     image: 'ghcr.io/projectbluefin/dakota-nvidia-gaming:stable',
     certificateIdentityRegexp: '^https://github.com/projectbluefin/dakota/.github/workflows/[^@]+@refs/.+$',
     certificateOidcIssuer: 'https://token.actions.githubusercontent.com',
+    // The dakota publisher already signs its SPDX referrers, so an unsigned
+    // one is a downgrade, not a transition state.
+    requireSbomSignature: true,
     packages: {},
   }),
 ])

@@ -89,6 +89,12 @@ describe('validateImageSbomRegistry', () => {
       },
     ])).not.toThrow()
   })
+
+  it('rejects a non-boolean requireSbomSignature', () => {
+    expect(() => validateImageSbomRegistry([
+      { ...record, requireSbomSignature: 'yes' as unknown as boolean },
+    ])).toThrow('image registry id "bluefin-stable" must define requireSbomSignature as a boolean')
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -235,6 +241,13 @@ describe('dakota image references name tags the publisher actually publishes', (
   it.each(dakotaImages.map(entry => entry.id))('%s tracks the :stable tag', (id) => {
     const { image } = recordFor(id)
     expect(image).toMatch(/:stable$/)
+  })
+
+  // The dakota publisher signs its SPDX referrers, so an unsigned one must
+  // sanitize rather than warn: otherwise the signature check is bypassable by
+  // simply not signing.
+  it.each(dakotaImages.map(entry => entry.id))('%s requires a signed SPDX referrer', (id) => {
+    expect(recordFor(id).requireSbomSignature).toBe(true)
   })
 
   it('carries a reviewed dakota-nvidia mapping now that the image publishes an SBOM', () => {

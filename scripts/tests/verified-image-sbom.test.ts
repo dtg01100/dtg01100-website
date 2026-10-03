@@ -567,6 +567,30 @@ describe('collectVerifiedImageSbom — publisher identity', () => {
     expect(run.mock.calls.some(call => call[0] === 'oras' && call[1][0] === 'pull')).toBe(true)
   })
 
+  it('rejects an unsigned referrer when the record requires a publisher signature', async () => {
+    const mockFs = {
+      mkdtempSync: vi.fn().mockReturnValue('/mock-tmp/sbom-unsigned-required'),
+      readdirSync: vi.fn().mockReturnValue(['sbom.spdx.json']),
+      readFileSync: vi.fn().mockReturnValue(JSON.stringify({ packages: [] })),
+      rmSync: vi.fn(),
+    }
+    const unsignedDiscovery = {
+      ...dakotaDiscovery,
+      referrers: dakotaDiscovery.referrers.map(r => ({ ...r, referrers: [] })),
+    }
+    const run = vi.fn()
+      .mockReturnValueOnce(JSON.stringify({ digest: DAKOTA_DIGEST }))
+      .mockReturnValueOnce(JSON.stringify(unsignedDiscovery))
+      .mockReturnValue('') // provenance verifies
+
+    await expect(collectVerifiedImageSbom({ ...DAKOTA_RECORD, requireSbomSignature: true }, { run, fs: mockFs }))
+      .rejects
+      .toMatchObject({ name: 'EvidenceError', code: 'missing-sbom-signature' })
+    // The SBOM bytes must never be pulled: the listing that says "unsigned" is
+    // the same unsigned listing an attacker controls.
+    expect(run.mock.calls.some(call => call[0] === 'oras' && call[1][0] === 'pull')).toBe(false)
+  })
+
   it('rejects a referrer signed by the wrong publisher', async () => {
     const identityFailure = new Error('cosign failed') as Error & { stderr?: string }
     identityFailure.stderr = 'no matching signatures: none of the expected identities matched what was in the certificate, '
