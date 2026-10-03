@@ -120,6 +120,15 @@ npm run build
 
 ## Verification
 
+For locale-bundle inventory changes, keep every supported locale in
+`SUPPORTED_LOCALES` in `src/tests/useLocale.test.ts`, rather than adding
+branch-specific exceptions to the expected value. Re-derive the bundled
+inventory with the focused check:
+
+```bash
+npx vitest run src/tests/useLocale.test.ts
+```
+
 After squash merge, verify the merged commit:
 
 ```bash
