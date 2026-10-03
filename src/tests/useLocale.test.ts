@@ -73,6 +73,15 @@ describe('useLocale', () => {
       expect(resolveLocale('zh-MY')).toBe('zh-Hans')
     })
 
+    it('aliases the Ukrainian regional tag to the uk bundle', () => {
+      // uk-UA has no bundle of its own and uk is the only Ukrainian bundle,
+      // so the region tag resolves unambiguously to uk. This is issue #905:
+      // a browser reporting uk-UA previously fell to the default locale.
+      expect(resolveLocale('uk-UA')).toBe('uk')
+      // The exact bundle is still matched verbatim.
+      expect(resolveLocale('uk')).toBe('uk')
+    })
+
     it('does not alias Traditional-Chinese region tags', () => {
       // Each Traditional region has its own bundle, so they must keep their
       // own tag. The exact-match path handles the bundled ones; the alias
