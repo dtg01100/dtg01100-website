@@ -376,8 +376,10 @@ during site builds (`npm run build`).
   `deviceScaleFactor: 2`, producing a crisp 2400×1260 WebP image (standard
   1.91:1 Open Graph aspect ratio) encoded via `cwebp`.
 - **Rotation**:
-  - Monthly rotation (default): matches current calendar month (e.g. September)
-    and day/night time.
+  - Monthly rotation (default): matches current calendar month and always
+    selects the **Day** wallpaper variant to consistently pair with the
+    documentation site's matching-month **Night** wallpaper variant. Never gate
+    the monthly website card variant on build-time UTC hour.
   - Daily rotation (`--mode daily`): rotates deterministically by day-of-year across
     all 36 wallpapers.
 - **Commands**:

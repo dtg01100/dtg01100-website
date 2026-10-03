@@ -94,18 +94,17 @@ export function selectRotatingWallpaper(pool = getAllowedWallpapers(), date = ne
 }
 
 /**
- * Selects a wallpaper matching the calendar month and day/night time.
+ * Selects a wallpaper matching the calendar month.
+ * The website always uses the Day variant to pair with the docs site's Night variant.
  */
 export function selectMonthlyWallpaper(pool = getAllowedWallpapers(), date = new Date()) {
   const monthIdx = date.getUTCMonth() + 1
-  const hour = date.getUTCHours()
-  const timeOfDay = (hour >= 6 && hour < 18) ? 'Day' : 'Night'
 
   const monthItems = pool.filter(w => w.monthIndex === monthIdx)
   if (!monthItems.length) {
     return pool[0]
   }
-  const matchedTime = monthItems.find(w => w.time === timeOfDay)
+  const matchedTime = monthItems.find(w => w.time === 'Day')
   return matchedTime || monthItems[0]
 }
 

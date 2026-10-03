@@ -71,7 +71,7 @@ describe('social cards wallpaper pool', () => {
     expect(item1).not.toEqual(item2)
   })
 
-  it('selects matching month and day/night with selectMonthlyWallpaper', () => {
+  it('selects matching month Day wallpaper with selectMonthlyWallpaper regardless of time', () => {
     const pool = getAllowedWallpapers()
     const septDay = new Date(Date.UTC(2026, 8, 15, 12, 0, 0)) // September day
     const septNight = new Date(Date.UTC(2026, 8, 15, 23, 0, 0)) // September night
@@ -80,7 +80,7 @@ describe('social cards wallpaper pool', () => {
     const nightChoice = selectMonthlyWallpaper(pool, septNight)
 
     expect(dayChoice.file).toBe('bluefin-09-day.webp')
-    expect(nightChoice.file).toBe('bluefin-09-night.webp')
+    expect(nightChoice.file).toBe('bluefin-09-day.webp')
   })
 
   it('selects a valid item with selectRandomWallpaper', () => {
