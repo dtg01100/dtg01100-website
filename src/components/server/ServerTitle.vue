@@ -2,6 +2,7 @@
 import { useFadeInUp } from '../../composables'
 
 const { isLoaded } = useFadeInUp()
+const baseUrl = import.meta.env.BASE_URL
 </script>
 
 <template>
@@ -13,7 +14,20 @@ const { isLoaded } = useFadeInUp()
         </div>
 
         <h1 class="hero-title">
-          Bluefin Server
+          <picture>
+            <source
+              media="(prefers-color-scheme: light)"
+              :srcset="`${baseUrl}brands/bluefin-server-logo-light.svg`"
+            >
+            <img
+              class="server-wordmark"
+              :src="`${baseUrl}brands/bluefin-server-logo-dark.svg`"
+              alt="Bluefin Server"
+              width="500"
+              height="240"
+              fetchpriority="high"
+            >
+          </picture>
         </h1>
       </div>
 
@@ -75,21 +89,29 @@ const { isLoaded } = useFadeInUp()
 }
 
 .hero-title {
-  font-family: Inter;
-  font-weight: 700;
-  font-size: 4.2rem;
-  text-transform: uppercase;
-  color: var(--color-blue-light);
-  margin: 0 0 6px 0;
+  margin: 0 0 6px;
   line-height: 1;
-  padding-top: 0;
-  padding-left: 0;
-  text-shadow: 0 2px 8px rgba(var(--color-bg-rgb), 0.6);
+  padding: 0;
+
+  picture {
+    display: block;
+  }
+}
+
+.server-wordmark {
+  display: block;
+  width: min(100%, 440px);
+  height: auto;
 }
 
 @media (max-width: 640px) {
-  .hero-title {
-    font-size: 3.2rem;
+  .title-inner {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .title-subtitle {
+    text-align: left;
   }
 }
 </style>

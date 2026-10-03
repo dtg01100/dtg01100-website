@@ -8,7 +8,9 @@
   <meta name="description" content="The Bluefin experience for your homelab. Image-based, auto-updating, zero maintenance. One management suite for every node, every service, and every container you run at home." />
   <!-- Hidden page: not linked from main site, intentionally excluded from search index -->
   <meta name="robots" content="noindex, nofollow" />
-  <meta name="theme-color" content="#38bdf8" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#f1f6f8" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0c1016" media="(prefers-color-scheme: dark)" />
   <link rel="canonical" href="https://projectbluefin.io/server/" />
 
   <!-- Open Graph -->
@@ -29,7 +31,8 @@
   <meta name="twitter:image" content="https://projectbluefin.io/characters/karl.webp" />
   <meta name="twitter:image:alt" content="Karl the Bluefin Server mascot" />
 
-  <link rel="preload" as="image" href="/evening/august-night.webp">
+  <link rel="preload" as="image" href="%BASE_URL%img/wallpapers/bluefin-08-day.webp" media="(prefers-color-scheme: light)">
+  <link rel="preload" as="image" href="%BASE_URL%evening/august-night.webp" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="/favicons/favicon.ico" />
   <link rel="manifest" href="/favicons/site.webmanifest" />
   <style>@view-transition { navigation: auto; }</style>

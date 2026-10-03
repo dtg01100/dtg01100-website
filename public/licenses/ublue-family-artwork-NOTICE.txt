@@ -1,9 +1,9 @@
 Universal Blue family artwork
 =============================
 
-This distribution registers and serves wallpaper artwork from two Universal
-Blue source repositories, both licensed under the Apache License, Version 2.0
-(the full license text follows this notice).
+This distribution registers and serves wallpaper and wordmark artwork from
+three Universal Blue family source repositories, all licensed under the
+Apache License, Version 2.0 (the full license text follows this notice).
 
 1. Bluefin monthly day/night wallpapers (January - December)
    Source:  https://github.com/ublue-os/artwork
@@ -26,6 +26,14 @@ Blue source repositories, both licensed under the Apache License, Version 2.0
    No cropping, scaling, or other alteration; the Bazzite press kit asks
    consumers not to distort or modify the artwork, and format conversion at
    the same dimensions is the compliant reading.
+
+3. Bluefin Server day/night wordmarks
+   Source:  https://github.com/projectbluefin/artwork
+   Path:    assets/vector/logos/bluefin-server/bluefin-server-logo-light.svg,
+            assets/vector/logos/bluefin-server/bluefin-server-logo-dark.svg
+   Commit:  7d1ff46a5d2a404175f1840596fa2777b0989860
+   Served:  public/brands/bluefin-server-logo-{light,dark}.svg
+   Modifications: none; copied byte-for-byte from the source SVGs.
 
 Aurora artwork is intentionally absent from this distribution: the project
 does not have permission to use it.
