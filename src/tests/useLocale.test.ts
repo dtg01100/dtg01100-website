@@ -72,6 +72,15 @@ describe('useLocale', () => {
       expect(resolveLocale('zh-SG')).toBe('zh-Hans')
     })
 
+    it('aliases cs-CZ to the cs bundle', () => {
+      // cs-CZ has no bundle of its own; `cs` is the only Czech bundle, so
+      // routing cs-CZ to it is unambiguous. Without this entry a Czech
+      // browser reporting the region tag falls to en-US even though
+      // ?lang=cs works. Single-bundle languages without a region (e.g.
+      // `eo`) exact-match without an alias entry.
+      expect(resolveLocale('cs-CZ')).toBe('cs')
+    })
+
     it('does not alias Traditional-Chinese region tags', () => {
       // Each Traditional region has its own bundle, so they must keep their
       // own tag. The exact-match path handles the bundled ones; the alias
@@ -91,12 +100,11 @@ describe('useLocale', () => {
     })
 
     it('does not introduce subtag fallback for other languages', () => {
-      // The policy from content-maintenance/SKILL.md: a bare-language file
-      // (`cs`) is not picked for a `cs-CZ` browser, and a region file
-      // (`sk-SK`) is not picked for a bare `sk` browser. resolveLocale
-      // honours that — only the explicit LOCALE_ALIASES entries get a
-      // second chance.
-      expect(resolveLocale('cs-CZ')).toBe(DEFAULT_LOCALE)
+      // The policy from content-maintenance/SKILL.md: a region file
+      // (`sk-SK`) is not picked for a bare `sk` browser, and a multi-bundle
+      // base (`de-DE` plus a hypothetical `de-AT`) is not collapsed onto
+      // the wrong sibling. resolveLocale honours that — only the explicit
+      // LOCALE_ALIASES entries get a second chance.
       expect(resolveLocale('sk')).toBe(DEFAULT_LOCALE)
       expect(resolveLocale('de')).toBe(DEFAULT_LOCALE)
       expect(resolveLocale('fr')).toBe(DEFAULT_LOCALE)

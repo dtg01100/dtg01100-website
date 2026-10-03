@@ -166,24 +166,36 @@ new-locale addition, so the `SUPPORTED_LOCALES` edit above is required.
 
 The filename tag is matched exactly. `App.vue`, `DakotaApp.vue`, and
 `ServerApp.vue` select a locale only when `?lang=` or `navigator.language`
-equals an available tag, with no language-subtag fallback: a bare-language
-file (`cs`) is not picked for a `cs-CZ` browser, and a region file (`sk-SK`)
-is not picked for a bare `sk` browser. Keep the tag the issue names; changing
-the matching is a runtime change, not locale content.
+equals an available tag, with no language-subtag fallback: a region file
+(`sk-SK`) is not picked for a bare `sk` browser, and a multi-bundle base
+(`de-DE` plus a hypothetical `de-AT`) is not collapsed onto the wrong
+sibling. The `LOCALE_ALIASES` map handles single-bundle region tags
+(`cs-CZ` → `cs`) and Simplified-Chinese region tags separately. Keep the
+tag the issue names; changing the matching is a runtime change, not locale
+content.
 
 The one carve-out from "no fallback" lives in `src/composables/useLocale.ts`
 as the `LOCALE_ALIASES` map and the `resolveLocale()` function. Aliases are
-allowed only when a single base language ships multiple region/script bundles
-and the alias target is the *only* bundle that fits the source region — the
-current entries (`zh-CN` → `zh-Hans`, `zh-SG` → `zh-Hans`) close the gap
-where a Simplified-Chinese browser would otherwise fall to `en-US`. Bare
-`zh` is intentionally not aliased, because three bundles share that base
-(`zh-HK`, `zh-Hans`, `zh-TW`) and picking one arbitrarily would render the
-wrong script for a real user. To add an alias, append the region tag to
-`LOCALE_ALIASES` and add a `resolveLocale` test in
-`src/tests/useLocale.test.ts` that asserts the alias resolves to the right
-bundle and that bare/region tags not on the alias map still fall to the
-default.
+allowed only when the alias target is the *only* bundle that fits the source
+region. Two classes of entry satisfy that rule:
+
+- **Single-bundle region tags** — `cs-CZ` → `cs`. The base language ships
+  one bundle and the source region has none of its own, so the alias
+  target is unambiguous. Single-bundle languages without a region tag
+  (e.g. `eo`, where browsers emit the bare tag) exact-match without an
+  alias entry.
+- **Simplified-Chinese region tags** — `zh-CN` → `zh-Hans`, `zh-SG` →
+  `zh-Hans`. Three Chinese bundles (`zh-HK`, `zh-Hans`, `zh-TW`) share the
+  base `zh`, so bare `zh` is intentionally not aliased; picking one
+  arbitrarily would render the wrong script for a real user. The
+  Simplified-Chinese aliases close the gap where a Simplified-Chinese
+  browser would otherwise fall to `en-US` even though `zh-Hans` is the
+  only Simplified-Chinese bundle.
+
+To add an alias, append the region tag to `LOCALE_ALIASES` and add a
+`resolveLocale` test in `src/tests/useLocale.test.ts` that asserts the
+alias resolves to the right bundle and that bare/region tags not on the
+alias map still fall to the default.
 
 ## Locale completeness
 

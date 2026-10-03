@@ -24,22 +24,31 @@ export const DEFAULT_LOCALE = 'en-US'
  * Chromium emit from `navigator.language` or from the `lang` URL parameter;
  * the values are the exact tags in src/locales/*.json.
  *
- * Currently scoped to Simplified Chinese: a `zh-CN`/`zh-SG` browser has no
- * `zh-CN.json` or `zh-SG.json` bundle to read from, and there is exactly one
- * Simplified-Chinese bundle (`zh-Hans`), so routing these regions to it is
- * unambiguous. Traditional-Chinese regions (`zh-HK`, `zh-TW`) each have
- * their own bundle; the script-side region `zh-MO` is not aliased and has
- * no bundle of its own, so it falls to the default. Collapsing any of them
- * onto another Chinese bundle would pick the wrong orthography for a real
- * user.
+ * Two classes of entry live here:
+ *
+ * - **Single-bundle region tags** (`cs-CZ`): a region the browser reports
+ *   but the bundle does not ship verbatim, with exactly one bundled locale
+ *   sharing the base language. Routing it to that base bundle is
+ *   unambiguous — there is no sibling to pick wrong — and is the same
+ *   case the Simplified-Chinese aliases below close. Single-bundle
+ *   languages without a region (e.g. `eo`, where browsers send the bare
+ *   tag) exact-match without an alias entry.
+ * - **Simplified-Chinese region tags** (`zh-CN`, `zh-SG`): a browser with
+ *   no Simplified-Chinese bundle of its own must reach the only
+ *   Simplified-Chinese bundle (`zh-Hans`). Traditional-Chinese regions
+ *   (`zh-HK`, `zh-TW`) each have their own bundle; the script-side
+ *   region `zh-MO` is not aliased and has no bundle of its own, so it
+ *   falls to the default. Collapsing any of them onto another Chinese
+ *   bundle would pick the wrong orthography for a real user.
  *
  * Adding more aliases is allowed only when the alias target is the *only*
  * bundle the source language ships. Generic subtag fallback (bare `zh` →
- * `zh-Hans`, or `cs-CZ` → `cs`) is intentionally absent: it lets a single
- * browser tag resolve through any of N siblings, which is how a bundle gets
- * rendered in the wrong script for a real user.
+ * `zh-Hans`) is intentionally absent: it lets a single browser tag resolve
+ * through any of N siblings, which is how a bundle gets rendered in the
+ * wrong script for a real user.
  */
 export const LOCALE_ALIASES: Readonly<Record<string, string>> = {
+  'cs-CZ': 'cs',
   'zh-CN': 'zh-Hans',
   'zh-SG': 'zh-Hans',
 }
