@@ -24,14 +24,19 @@ export const DEFAULT_LOCALE = 'en-US'
  * Chromium emit from `navigator.language` or from the `lang` URL parameter;
  * the values are the exact tags in src/locales/*.json.
  *
- * Currently scoped to Simplified Chinese: a `zh-CN`/`zh-SG`/`zh-MY` browser
- * has no `zh-CN.json`/`zh-SG.json`/`zh-MY.json` bundle to read from, and
- * there is exactly one Simplified-Chinese bundle (`zh-Hans`), so routing
- * these regions to it is unambiguous. Traditional-Chinese regions (`zh-HK`,
- * `zh-TW`) each have their own bundle; the script-side region `zh-MO` is
- * not aliased and has no bundle of its own, so it falls to the default.
- * Collapsing any of them onto another Chinese bundle would pick the wrong
- * orthography for a real user.
+ * Two aliases, each unambiguous because the source tag has no bundle of its
+ * own and exactly one shipped bundle shares its base language:
+ *   - `uk-UA` → `uk`: a `uk-UA` browser has no `uk.json` to read from, and
+ *     `uk` is the only Ukrainian bundle, so routing the region tag to it is
+ *     unambiguous. This closes issue #905: a browser reporting `uk-UA`
+ *     previously fell to the default instead of the Ukrainian bundle.
+ *   - `zh-CN`/`zh-SG`/`zh-MY` → `zh-Hans`: neither region has its own bundle,
+ *     and `zh-Hans` is the only Simplified-Chinese bundle, so routing is
+ *     unambiguous.
+ * Traditional-Chinese regions (`zh-HK`, `zh-TW`) each have their own bundle;
+ * the script-side region `zh-MO` is not aliased and has no bundle of its own,
+ * so it falls to the default. Collapsing any of them onto another Chinese
+ * bundle would pick the wrong orthography for a real user.
  *
  * Adding more aliases is allowed only when the alias target is the *only*
  * bundle the source language ships. Generic subtag fallback (bare `zh` →
@@ -40,6 +45,7 @@ export const DEFAULT_LOCALE = 'en-US'
  * rendered in the wrong script for a real user.
  */
 export const LOCALE_ALIASES: Readonly<Record<string, string>> = {
+  'uk-UA': 'uk',
   'zh-CN': 'zh-Hans',
   'zh-SG': 'zh-Hans',
   'zh-MY': 'zh-Hans',
