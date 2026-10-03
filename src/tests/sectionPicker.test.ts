@@ -15,7 +15,17 @@ function mountPicker(classicStatus: 'verified' | 'unavailable' = 'verified') {
           checkedAt: '2026-08-25T00:00:00.000Z',
           status: 'verified',
           sources: [],
-          packages: { kernel: '7.0.7', systemd: '260.2' }
+          packages: {
+            kernel: '7.0.7',
+            gnome: '50.2',
+            mesa: '26.0.6',
+            systemd: '260.2',
+            podman: '5.8.2',
+            pipewire: '1.6.1',
+            flatpak: '1.16.6',
+            bootc: '1.15.2',
+            nvidia: '595.71.05'
+          }
         })
       }
     }
@@ -24,8 +34,14 @@ function mountPicker(classicStatus: 'verified' | 'unavailable' = 'verified') {
         ok: true,
         text: async () => `stable:
   status: ${classicStatus}
-  base: Fedora 44
+  pipewire: 1.4.9
+  gnome: 49.4
   kernel: 9.1.0
+  podman: 5.6.0
+  mesa: 25.2.7
+  base: Fedora 44
+  systemd: 258.3
+  nvidia: 580.95.05
 lts:
   status: verified
   kernel: 8.2.0
@@ -43,6 +59,13 @@ lts:
   })
   wrappers.push(wrapper)
   return wrapper
+}
+
+function versionRows(card: ReturnType<ReturnType<typeof mount>['get']>) {
+  return card.findAll('.version-row').map(row => [
+    row.get('.version-label').text(),
+    row.get('.version-value').text()
+  ])
 }
 
 describe('sectionPicker.vue', () => {
@@ -104,5 +127,49 @@ describe('sectionPicker.vue', () => {
     expect(classic.exists()).toBe(true)
     expect(classic.find('.version-info').exists()).toBe(true)
     expect(wrapper.get('a.card-box[href="/server/"]').find('.version-info').exists()).toBe(false)
+  })
+
+  it('renders Classic version rows with labels in CLASSIC_KEYS order', async () => {
+    const wrapper = mountPicker()
+    await flushPromises()
+    const classic = wrapper.get('a.card-box[href="https://docs.projectbluefin.io/downloads/"]')
+
+    expect(versionRows(classic)).toEqual([
+      ['Base OS', 'Fedora 44'],
+      ['Kernel', '9.1.0'],
+      ['systemd', '258.3'],
+      ['Mesa', '25.2.7'],
+      ['GNOME', '49.4'],
+      ['PipeWire', '1.4.9']
+    ])
+  })
+
+  it('renders Dakota version rows with labels in DAKOTA_KEYS order', async () => {
+    const wrapper = mountPicker()
+    await flushPromises()
+    const dakota = wrapper.get('a.card-box[href="/dakota/"]')
+
+    expect(versionRows(dakota)).toEqual([
+      ['Kernel', '7.0.7'],
+      ['systemd', '260.2'],
+      ['bootc', '1.15.2'],
+      ['Mesa', '26.0.6'],
+      ['NVidia Driver', '595.71.05'],
+      ['GNOME', '50.2'],
+      ['PipeWire', '1.6.1']
+    ])
+  })
+
+  it('does not display packages absent from the image SBOM or unverified sources', async () => {
+    const wrapper = mountPicker()
+    await flushPromises()
+    const labels = wrapper.findAll('.version-label').map(label => label.text())
+
+    for (const absent of ['Freedesktop SDK', 'Homebrew', 'Podman', 'podman', 'Flatpak', 'flatpak', 'OGC Kernel']) {
+      expect(labels).not.toContain(absent)
+    }
+    expect(wrapper.text()).not.toContain('4593.2.1')
+    expect(wrapper.text()).not.toContain('6.12.87')
+    expect(wrapper.text()).not.toContain('8.2.0')
   })
 })
