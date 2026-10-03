@@ -177,8 +177,8 @@ allowed only when the alias target is the *only* bundle that fits the source
 region. Two classes of entry satisfy that rule:
 
 - **Single-bundle region tags** — `ar-EG` → `ar`, `es-ES` → `es`, `hi-IN` → `hi`,
-  `id-ID` → `id`, `it-IT` → `it`, `pl-PL` → `pl`, `sv-SE` → `sv`, `tr-TR` → `tr`,
-  `uk-UA` → `uk`. Each base language ships one bundle and the source region
+  `id-ID` → `id`, `it-IT` → `it`, `pl-PL` → `pl`, `sv-SE` → `sv`, `tr-TR` → `tr`.
+  Each base language ships one bundle and the source region
   has none of its own, so the alias target is unambiguous.
 - **Simplified-Chinese region tags** — `zh-CN` → `zh-Hans`, `zh-SG` → `zh-Hans`.
   Three Chinese bundles (`zh-HK`, `zh-Hans`, `zh-TW`) share the base `zh`, so

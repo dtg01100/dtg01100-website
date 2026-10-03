@@ -27,7 +27,7 @@ export const DEFAULT_LOCALE = 'en-US'
  * Two classes of entry live here:
  *
  * - **Single-bundle region tags** (`ar-EG`, `es-ES`, `hi-IN`, `id-ID`,
- *   `it-IT`, `pl-PL`, `sv-SE`, `tr-TR`, `uk-UA`): a region the browser
+ *   `it-IT`, `pl-PL`, `sv-SE`, `tr-TR`): a region the browser
  *   reports but the bundle does not ship verbatim, with exactly one
  *   bundled locale sharing the base language. Routing them to that base
  *   bundle is unambiguous — there is no sibling to pick wrong — and is
@@ -55,7 +55,6 @@ export const LOCALE_ALIASES: Readonly<Record<string, string>> = {
   'pl-PL': 'pl',
   'sv-SE': 'sv',
   'tr-TR': 'tr',
-  'uk-UA': 'uk',
   'zh-CN': 'zh-Hans',
   'zh-SG': 'zh-Hans',
 }
