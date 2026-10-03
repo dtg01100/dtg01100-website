@@ -9,6 +9,7 @@ Repository boundary: [`../../AGENTS.md`](../../AGENTS.md).
 | Main-site section behavior | Existing component and data source | Content requests do not authorize component edits. |
 | Bluefin stream versions | `public/stream-versions.yml` (generated) | Regenerate with `npm run update:image-versions`; do not hand-edit. |
 | Dakota versions | `public/dakota-versions.json` (generated) | Regenerate with `npm run update:image-versions`; do not hand-edit. |
+| Bluefin Server versions | `public/server-versions.json` (generated) | Regenerate with `npm run update:image-versions`; do not hand-edit. |
 | Image version registry | `scripts/lib/image-sbom-registry.js` | Add/remove image records and package mappings. |
 | Wolves lore | `src/data/lore/*.md` and `src/data/wolves-lore-records.ts` | Authored records and manifest entries. |
 | Wolves Track 0 signal plan | `src/data/wolves-track-zero-manifest.ts` | Authored plan lines only. (`src/data/wolves-incoming-signal.txt` is no longer a runtime source.) |

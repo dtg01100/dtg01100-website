@@ -322,9 +322,8 @@ export function findEmbeddedSpdxLayer(imageAtDigest, run = execFileSync) {
 export function pullEmbeddedSpdx(repository, digest, run = execFileSync, fsImpl = fs) {
   // `oras blob fetch --output` takes a file path (or `-` for stdout); it
   // does `os.Create(outputPath)` on whatever it gets, and rejects a
-  // directory with "is a directory". Write the layer to a tmpfile inside
-  // a mkdtemp dir, then read back the only JSON file in that dir
-  // (#921 review).
+  // directory with "is a directory". Write the layer to a fixed file path
+  // inside a mkdtemp dir, then read that file back.
   const outputDir = fsImpl.mkdtempSync(path.join(os.tmpdir(), 'website-embedded-sbom-'))
   const outputPath = path.join(outputDir, 'sbom.spdx.json')
   try {
@@ -384,7 +383,7 @@ export async function collectVerifiedImageSbom(record, dependencies = {}) {
     // provenance *before* reading the manifest so the security argument
     // ("the SBOM bytes are authentic by association with the signed
     // manifest") holds — the manifest we then read is the one the
-    // signature attests to (#921 review).
+    // signature attests to.
     verifyImageProvenance(imageAtDigest, {
       certificateIdentityRegexp: record.certificateIdentityRegexp,
       certificateOidcIssuer: record.certificateOidcIssuer,
