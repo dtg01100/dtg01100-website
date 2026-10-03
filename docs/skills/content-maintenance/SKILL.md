@@ -173,16 +173,23 @@ the matching is a runtime change, not locale content.
 
 The one carve-out from "no fallback" lives in `src/composables/useLocale.ts`
 as the `LOCALE_ALIASES` map and the `resolveLocale()` function. Aliases are
-allowed only when a single base language ships multiple region/script bundles
-and the alias target is the *only* bundle that fits the source region — the
-current entries (`zh-CN` → `zh-Hans`, `zh-SG` → `zh-Hans`) close the gap
-where a Simplified-Chinese browser would otherwise fall to `en-US`. Bare
-`zh` is intentionally not aliased, because three bundles share that base
-(`zh-HK`, `zh-Hans`, `zh-TW`) and picking one arbitrarily would render the
-wrong script for a real user. To add an alias, append the region tag to
-`LOCALE_ALIASES` and add a `resolveLocale` test in
-`src/tests/useLocale.test.ts` that asserts the alias resolves to the right
-bundle and that bare/region tags not on the alias map still fall to the
+allowed only when the alias target is the *only* bundle that fits the source
+region. Two classes of entry satisfy that rule:
+
+- **Single-bundle region tags** — `ar-EG` → `ar`, `es-ES` → `es`, `hi-IN` → `hi`,
+  `id-ID` → `id`, `it-IT` → `it`, `pl-PL` → `pl`, `sv-SE` → `sv`, `tr-TR` → `tr`,
+  `uk-UA` → `uk`. Each base language ships one bundle and the source region
+  has none of its own, so the alias target is unambiguous.
+- **Simplified-Chinese region tags** — `zh-CN` → `zh-Hans`, `zh-SG` → `zh-Hans`.
+  Three Chinese bundles (`zh-HK`, `zh-Hans`, `zh-TW`) share the base `zh`, so
+  bare `zh` is intentionally not aliased; picking one arbitrarily would
+  render the wrong script for a real user. The Simplified-Chinese aliases
+  close the gap where a Simplified-Chinese browser would otherwise fall to
+  `en-US` even though `zh-Hans` is the only Simplified-Chinese bundle.
+
+To add an alias, append the region tag to `LOCALE_ALIASES` and add a `resolveLocale`
+test in `src/tests/useLocale.test.ts` that asserts the alias resolves to the
+right bundle and that bare/region tags not on the alias map still fall to the
 default.
 
 ## Locale completeness

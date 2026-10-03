@@ -72,6 +72,21 @@ describe('useLocale', () => {
       expect(resolveLocale('zh-SG')).toBe('zh-Hans')
     })
 
+    it('aliases single-bundle region tags to their sole base-language bundle', () => {
+      // Each source region has no bundle of its own and exactly one base-
+      // language bundle exists in the message map. Issue #926: without
+      // these entries a region-tag browser for any of these languages falls
+      // to en-US even though ?lang=<base> works.
+      expect(resolveLocale('ar-EG')).toBe('ar')
+      expect(resolveLocale('es-ES')).toBe('es')
+      expect(resolveLocale('hi-IN')).toBe('hi')
+      expect(resolveLocale('id-ID')).toBe('id')
+      expect(resolveLocale('it-IT')).toBe('it')
+      expect(resolveLocale('pl-PL')).toBe('pl')
+      expect(resolveLocale('sv-SE')).toBe('sv')
+      expect(resolveLocale('tr-TR')).toBe('tr')
+    })
+
     it('does not alias Traditional-Chinese region tags', () => {
       // Each Traditional region has its own bundle, so they must keep their
       // own tag. The exact-match path handles the bundled ones; the alias
