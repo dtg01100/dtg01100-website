@@ -63,12 +63,14 @@ describe('useLocale', () => {
     })
 
     it('aliases Simplified-Chinese region tags to the zh-Hans bundle', () => {
-      // Both zh-CN and zh-SG have no exact bundle; both must resolve to the
-      // Simplified-Chinese bundle, not to en-US. This is the regression from
-      // issue #915: a Simplified-Chinese browser was falling to en-US because
-      // the exact-match check rejected the region tag before any fallback.
+      // zh-CN, zh-SG, and zh-MY have no exact bundle; each must resolve to
+      // the Simplified-Chinese bundle, not to en-US. The regression from
+      // issues #915 and #909 was a Simplified-Chinese browser falling to
+      // en-US because the exact-match check rejected the region tag before
+      // any fallback.
       expect(resolveLocale('zh-CN')).toBe('zh-Hans')
       expect(resolveLocale('zh-SG')).toBe('zh-Hans')
+      expect(resolveLocale('zh-MY')).toBe('zh-Hans')
     })
 
     it('does not alias Traditional-Chinese region tags', () => {
