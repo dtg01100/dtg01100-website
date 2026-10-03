@@ -175,12 +175,12 @@ The one carve-out from "no fallback" lives in `src/composables/useLocale.ts`
 as the `LOCALE_ALIASES` map and the `resolveLocale()` function. Aliases are
 allowed only when a single base language ships multiple region/script bundles
 and the alias target is the *only* bundle that fits the source region — the
-current entries (`zh-CN` → `zh-Hans`, `zh-SG` → `zh-Hans`) close the gap
-where a Simplified-Chinese browser would otherwise fall to `en-US`. Bare
-`zh` is intentionally not aliased, because three bundles share that base
-(`zh-HK`, `zh-Hans`, `zh-TW`) and picking one arbitrarily would render the
-wrong script for a real user. To add an alias, append the region tag to
-`LOCALE_ALIASES` and add a `resolveLocale` test in
+current entries (`zh-CN` → `zh-Hans`, `zh-SG` → `zh-Hans`, `zh-MY` → `zh-Hans`)
+close the gap where a Simplified-Chinese browser would otherwise fall to
+`en-US`. Bare `zh` is intentionally not aliased, because three bundles share
+that base (`zh-HK`, `zh-Hans`, `zh-TW`) and picking one arbitrarily would
+render the wrong script for a real user. To add an alias, append the region
+tag to `LOCALE_ALIASES` and add a `resolveLocale` test in
 `src/tests/useLocale.test.ts` that asserts the alias resolves to the right
 bundle and that bare/region tags not on the alias map still fall to the
 default.
