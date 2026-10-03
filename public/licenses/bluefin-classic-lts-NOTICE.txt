@@ -1,0 +1,17 @@
+Bluefin Classic and Bluefin LTS wordmarks
+========================================
+
+Source: https://github.com/projectbluefin/artwork
+Commit: 7d1ff46a5d2a404175f1840596fa2777b0989860
+License: Apache License, Version 2.0
+Full license text: ublue-family-artwork-NOTICE.txt in this directory.
+
+Upstream paths:
+- assets/vector/logos/bluefin-classic/main/bluefin-classic-logo-dark.svg
+- assets/vector/logos/bluefin-lts/bluefin-lts-logo-dark.svg
+
+Served paths:
+- public/brands/bluefin-classic-logo-dark.svg
+- public/brands/bluefin-lts-logo-dark.svg
+
+Modifications: none; both SVGs are copied byte-for-byte from upstream.

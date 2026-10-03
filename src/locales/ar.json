@@ -83,7 +83,6 @@
   "TryBluefin": {
     "Tag": "جرّب",
     "Title": "بلوفين",
-    "LegacyDownloads": "الإصدارات الأقدم المبنية على فيدورا [ما زالت متاحة للتنزيل](https://docs.projectbluefin.io/downloads/) لكنها غير موصى بها للمستخدمين الجدد.",
     "Wolves": {
       "Cards": {
         "AlphaBadge": "⚠️ ألفا.",

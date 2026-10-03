@@ -5,14 +5,17 @@ const props = defineProps<{
   title: string
   description?: string
   image: string
+  wordmark?: string
   href?: string
   badgeTitle?: string
   badgeSub?: string
   versionRows?: { label: string, value: string }[]
 }>()
 
+const baseUrl = import.meta.env.BASE_URL
+
 const cardImageStyle = computed(() => ({
-  backgroundImage: `url(${import.meta.env.BASE_URL}${props.image})`,
+  backgroundImage: `url(${baseUrl}${props.image})`,
 }))
 
 const rows = computed(() => props.versionRows ?? [])
@@ -26,7 +29,18 @@ const rows = computed(() => props.versionRows ?? [])
     </div>
     <div class="card-image" :style="cardImageStyle">
       <div class="card-overlay">
-        <span class="card-title">{{ title }}</span>
+        <span class="card-title">
+          <img
+            v-if="wordmark"
+            class="card-wordmark"
+            :src="`${baseUrl}${wordmark}`"
+            :alt="title"
+            width="500"
+            height="240"
+            loading="lazy"
+          >
+          <template v-else>{{ title }}</template>
+        </span>
         <span v-if="description" class="card-description">{{ description }}</span>
 
         <div v-if="rows.length" class="version-info">
@@ -87,6 +101,12 @@ const rows = computed(() => props.versionRows ?? [])
   margin: 0;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
   text-align: left;
+}
+
+.card-wordmark {
+  display: block;
+  width: min(100%, 240px);
+  height: auto;
 }
 
 .card-description {

@@ -83,7 +83,6 @@
   "TryBluefin": {
     "Tag": "Przetestuj",
     "Title": "Bluefin",
-    "LegacyDownloads": "Starsze wersje oparte na Fedorze są [nadal dostępne do pobrania](https://docs.projectbluefin.io/downloads/), ale nie są zalecane dla nowych użytkowników.",
     "Wolves": {
       "Cards": {
         "AlphaBadge": "⚠️ Alpha.",

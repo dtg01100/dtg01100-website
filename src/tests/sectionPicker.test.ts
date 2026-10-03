@@ -1,10 +1,12 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import SectionPicker from '../components/sections/SectionPicker.vue'
 import { i18n } from '../locales/schema'
 
-function mountPicker() {
+const wrappers: ReturnType<typeof mount>[] = []
+
+function mountPicker(classicStatus: 'verified' | 'unavailable' = 'verified') {
   vi.stubGlobal('fetch', vi.fn(async (input: string) => {
     if (input.endsWith('/dakota-versions.json')) {
       return {
@@ -13,133 +15,94 @@ function mountPicker() {
           checkedAt: '2026-08-25T00:00:00.000Z',
           status: 'verified',
           sources: [],
-          packages: {
-            kernel: '7.0.7',
-            gnome: '50.2',
-            mesa: '26.0.6',
-            systemd: '260.2',
-            podman: '5.8.2',
-            pipewire: '1.6.1',
-            flatpak: '1.16.6',
-            bootc: '1.15.2',
-            nvidia: '595.71.05'
-          }
+          packages: { kernel: '7.0.7', systemd: '260.2' }
         })
       }
     }
-
+    if (input.endsWith('/stream-versions.yml')) {
+      return {
+        ok: true,
+        text: async () => `stable:
+  status: ${classicStatus}
+  base: Fedora 44
+  kernel: 9.1.0
+lts:
+  status: verified
+  kernel: 8.2.0
+`
+      }
+    }
     throw new Error('offline')
   }))
 
-  return mount(SectionPicker, {
+  const wrapper = mount(SectionPicker, {
     global: {
       plugins: [i18n],
-      provide: {
-        visibleSection: ref('')
-      }
+      provide: { visibleSection: ref('') }
     }
   })
+  wrappers.push(wrapper)
+  return wrapper
 }
 
 describe('sectionPicker.vue', () => {
   afterEach(() => {
+    for (const wrapper of wrappers.splice(0)) {
+      wrapper.unmount()
+    }
     vi.unstubAllGlobals()
   })
 
-  it('renders the three download cards with their release statuses', async () => {
+  it('keeps Classic and LTS separate from next-generation product destinations', () => {
     const wrapper = mountPicker()
-    await vi.waitFor(() => {
-      expect(wrapper.findAll('.wolves-download-grid .card-box')).toHaveLength(3)
-    })
+    const primaryDestinations = wrapper.get('.classic-download-grid')
+      .findAll('.card-box')
+      .map(card => card.attributes('href'))
+    const nextDestinations = wrapper.get('.next-generation-section')
+      .findAll('.card-box')
+      .map(card => card.attributes('href'))
 
-    expect(wrapper.text()).not.toContain('For the Wolves')
-    expect(wrapper.find('.release-grid').exists()).toBe(false)
-
-    const cards = wrapper.findAll('.wolves-download-grid .card-box')
-    expect(cards.map(card => card.get('.card-title').text())).toEqual([
-      'Dakota',
-      'Bluefin Server',
-      'Utah'
-    ])
-    expect(cards.map(card => card.attributes('href'))).toEqual([
+    expect(new Set(primaryDestinations)).toEqual(new Set([
+      'https://docs.projectbluefin.io/downloads/',
+      undefined
+    ]))
+    expect(new Set(nextDestinations)).toEqual(new Set([
       '/dakota/',
       '/server/',
       'https://github.com/projectbluefin/utah'
-    ])
-    expect(cards.map(card => card.get('.card-image').attributes('style'))).toEqual([
-      expect.stringContaining('characters/dakota.webp'),
-      expect.stringContaining('characters/alamosaurus.webp'),
-      expect.stringContaining('characters/utah.webp')
-    ])
-    expect(cards.map(card => card.get('.alpha-badge-title').text())).toEqual([
-      '⚠️ Alpha.',
-      '⚠️ Alpha.',
-      'Coming Soon'
-    ])
-
-    const legacyDownloads = wrapper.get('.legacy-download-note')
-    expect(legacyDownloads.text()).toBe(
-      'The older Fedora based versions are still available for download but are not recommended for new users.'
-    )
-    expect(legacyDownloads.get('a').attributes('href')).toBe(
-      'https://docs.projectbluefin.io/downloads/'
-    )
+    ]))
+    const classic = wrapper.find('a.card-box[href="https://docs.projectbluefin.io/downloads/"]')
+    expect(classic.exists()).toBe(true)
+    expect(classic.get('img').attributes('alt')).toBe('Bluefin Classic')
   })
 
-  it('reuses the raptor card version rows and labels for Dakota', async () => {
+  it('keeps LTS Coming Soon and non-downloadable even if a version feed reports it verified', async () => {
     const wrapper = mountPicker()
-    await vi.waitFor(() => {
-      expect(wrapper.findAll('.wolves-download-grid .version-row').length).toBeGreaterThan(0)
-    })
+    await flushPromises()
+    const lts = wrapper.findAll('.card-box').find(card => card.find('img[alt="Bluefin LTS"]').exists())
 
-    const dakota = wrapper.findAll('.wolves-download-grid .card-box')[0]
-    const rows = dakota.findAll('.version-row').map(row => [
-      row.get('.version-label').text(),
-      row.get('.version-value').text()
-    ])
-
-    expect(rows).toEqual([
-      ['Kernel', '7.0.7'],
-      ['systemd', '260.2'],
-      ['bootc', '1.15.2'],
-      ['Mesa', '26.0.6'],
-      ['NVidia Driver', '595.71.05'],
-      ['GNOME', '50.2'],
-      ['PipeWire', '1.6.1']
-    ])
+    expect(lts).toBeDefined()
+    expect(lts?.element.tagName).toBe('DIV')
+    expect(lts?.attributes('href')).toBeUndefined()
+    expect(lts?.get('.alpha-badge-title').text()).toBe('Coming Soon')
+    expect(lts?.findAll('.version-row')).toHaveLength(0)
   })
 
-  it('does not display packages absent from the image SBOM', async () => {
-    const wrapper = mountPicker()
-    await vi.waitFor(() => {
-      expect(wrapper.findAll('.wolves-download-grid .version-row').length).toBeGreaterThan(0)
-    })
+  it('withholds unverified Classic metadata without disabling its download destination', async () => {
+    const wrapper = mountPicker('unavailable')
+    await flushPromises()
+    const classic = wrapper.find('a.card-box[href="https://docs.projectbluefin.io/downloads/"]')
 
-    const labels = wrapper.findAll('.wolves-download-grid .version-label').map(l => l.text())
-    // Neither is present in the image SBOM, so neither may be displayed.
-    expect(labels).not.toContain('Freedesktop SDK')
-    expect(labels).not.toContain('Homebrew')
-    expect(labels).not.toContain('Podman')
-    expect(labels).not.toContain('Flatpak')
+    expect(classic.exists()).toBe(true)
+    expect(classic.findAll('.version-row')).toHaveLength(0)
   })
 
-  it('does not source Bluefin Server versions from Flatcar stream data', async () => {
+  it('does not show Classic stream metadata on the server product card', async () => {
     const wrapper = mountPicker()
-    await vi.waitFor(() => {
-      expect(wrapper.findAll('.wolves-download-grid .card-box')).toHaveLength(3)
-    })
-
-    expect(wrapper.text()).not.toContain('4593.2.1')
-    expect(wrapper.text()).not.toContain('6.12.87')
-  })
-
-  it('does not display OGC Kernel when no verified gaming result exists', async () => {
-    const wrapper = mountPicker()
-    await vi.waitFor(() => {
-      expect(wrapper.findAll('.wolves-download-grid .version-row').length).toBeGreaterThan(0)
-    })
-
-    const labels = wrapper.findAll('.wolves-download-grid .version-label').map(l => l.text())
-    expect(labels).not.toContain('OGC Kernel')
+    await flushPromises()
+    const classic = wrapper.find('a.card-box[href="https://docs.projectbluefin.io/downloads/"]')
+    expect(classic.exists()).toBe(true)
+    expect(classic.find('.version-info').exists()).toBe(true)
+    expect(wrapper.get('a.card-box[href="/server/"]').find('.version-info').exists()).toBe(false)
   })
 })

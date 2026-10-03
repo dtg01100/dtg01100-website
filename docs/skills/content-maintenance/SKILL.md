@@ -1,6 +1,9 @@
 ---
 name: content-maintenance
 description: Use when editing production text, links, translations, data, or approved assets without changing design.
+metadata:
+  context7-sources:
+    - /websites/vuejs
 ---
 
 # Content maintenance
@@ -106,29 +109,42 @@ Simplified-only forms are defects.
 
 ## Front-page downloads
 
-The three main-site download cards are owned by
+The main-site download cards are owned by
 `src/components/sections/SectionPicker.vue`; their user-facing copy belongs in
-`src/locales/en-US.json`. The retired Fedora image chooser has no testing entry
-or runtime component. Adding another download card changes the rendered
-component surface and therefore needs an explicitly approved design request;
-do not treat it as a locale-only edit.
+`src/locales/en-US.json`. Classic and LTS form the `classic-download-grid`
+under Try Bluefin. Dakota, Bluefin Server, and Utah are grouped under the
+`NextGeneration` heading and description in a separate named section. The
+retired Fedora image chooser has no testing entry or runtime component.
+Adding another card changes the rendered component surface and therefore
+needs an explicitly approved design request; do not treat it as a locale-only
+edit.
 
 Re-derive the owner and locale source with:
 
 ```bash
-rg -n "TryBluefin.Wolves.Cards|wolves-download-grid" \
+rg -n "TryBluefin.Wolves.Cards|NextGeneration|classic-download-grid|wolves-download-grid" \
   src/components/sections/SectionPicker.vue src/locales/en-US.json
 ```
 
-The note immediately below the `Try Bluefin` heading is
-`TryBluefin.LegacyDownloads`; it points legacy Fedora-based users to the docs
-download archive. The Utah card links to `https://github.com/projectbluefin/utah`
-until a dedicated download route exists.
+The Classic card links to `https://docs.projectbluefin.io/downloads/`, which
+keeps all hardware variants available without reviving the retired chooser.
+Its package rows come from `public/stream-versions.yml` only when
+`stable.status` is `verified`; the card remains usable if metadata is absent.
+LTS stays Coming Soon with no download link or package rows, even if an LTS
+feed later becomes available, until the owner authorizes its release. Utah
+links to `https://github.com/projectbluefin/utah` until a dedicated route exists.
 
 Reuse `src/components/common/ProductVersionCard.vue` — the extracted "raptor
 card" — for any new product/download card. Do not author parallel markup or
 styles for the same data; the labels and card chrome must not drift between
 `/`, `/dakota/`, and `/server/`.
+
+Use the optional `wordmark` asset prop for a branded card title; its image alt
+text preserves the product name. Keep the existing backdrop and card chrome.
+The homepage is dark, so use the matching white-letter wordmark rather than
+selecting a black-letter variant from the OS setting. Resolve `BASE_URL` in
+the script and expose a `baseUrl` binding to the template: `import.meta` is
+not supported directly inside Vue template expressions.
 
 A card's title and description must be classed `<span>`s, not `<p>`. The global
 `#scene-picker p` rule sets `text-align: center` and `max-width: 800px`, and its
@@ -139,9 +155,9 @@ ignores the component's own alignment.
 
 `ProductVersionCard.vue` renders each card's status from `badgeTitle` and the
 optional `badgeSub`. Dakota and Bluefin Server use the locale-backed Alpha
-warning (`TryBluefin.Wolves.Cards.AlphaBadge` / `AlphaBadgeSub`); Utah uses the
-title-only `TryBluefin.Wolves.Cards.ComingSoonBadge`. Keep those statuses
-explicit per card rather than applying one shared status to the entire array.
+warning (`TryBluefin.Wolves.Cards.AlphaBadge` / `AlphaBadgeSub`); LTS and Utah
+use the title-only `TryBluefin.Wolves.Cards.ComingSoonBadge`. Keep those
+statuses explicit per card rather than applying one status to the entire array.
 
 ## Adding a new locale
 
@@ -409,3 +425,4 @@ during site builds (`npm run build`).
 - ORAS referrer discovery and JSON output: `/oras-project/oras`
 - Cosign verification and Sigstore transparency: `/sigstore/docs`
 - Supply-chain scorecard context: `/ossf/scorecard`
+- Vue script-setup template bindings: https://vuejs.org/api/sfc-script-setup

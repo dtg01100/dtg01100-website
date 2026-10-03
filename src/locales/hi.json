@@ -83,7 +83,6 @@
   "TryBluefin": {
     "Tag": "आज़माएँ",
     "Title": "Bluefin",
-    "LegacyDownloads": "पुराने Fedora आधारित संस्करण [अभी भी डाउनलोड के लिए उपलब्ध हैं](https://docs.projectbluefin.io/downloads/) लेकिन नए उपयोगकर्ताओं के लिए अनुशंसित नहीं हैं।",
     "Wolves": {
       "Cards": {
         "AlphaBadge": "⚠️ अल्फ़ा।",

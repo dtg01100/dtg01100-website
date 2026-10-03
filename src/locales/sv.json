@@ -83,7 +83,6 @@
   "TryBluefin": {
     "Tag": "Prova",
     "Title": "Bluefin",
-    "LegacyDownloads": "De äldre Fedora-baserade versionerna är fortfarande tillgängliga för nedladdning men rekommenderas inte för nya användare.",
     "Wolves": {
       "Cards": {
         "AlphaBadge": "⚠️ Alpha.",

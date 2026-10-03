@@ -83,12 +83,15 @@
   "TryBluefin": {
     "Tag": "Try",
     "Title": "Bluefin",
-    "LegacyDownloads": "The older Fedora based versions are [still available for download](https://docs.projectbluefin.io/downloads/) but are not recommended for new users.",
     "Wolves": {
       "Cards": {
         "AlphaBadge": "⚠️ Alpha.",
         "AlphaBadgeSub": "Take appropriate precautions.",
         "ComingSoonBadge": "Coming Soon",
+        "Classic": "Bluefin Classic",
+        "ClassicDescription": "For Everyone",
+        "Lts": "Bluefin LTS",
+        "LtsDescription": "A long term support experience on an enterprise-grade foundation.",
         "Dakota": "Dakota",
         "DakotaDescription": "The Final Form. Bluefin Perfected.",
         "Utah": "Utah",
@@ -97,6 +100,10 @@
         "ServerDescription": "The world's premier FSDK server operating system."
       }
     }
+  },
+  "NextGeneration": {
+    "Title": "The Next Generation",
+    "Description": "For the next generation, help us build it"
   },
   "Community": {
     "Tag": "Our",
