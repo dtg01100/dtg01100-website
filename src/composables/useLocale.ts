@@ -24,27 +24,33 @@ export const DEFAULT_LOCALE = 'en-US'
  * Chromium emit from `navigator.language` or from the `lang` URL parameter;
  * the values are the exact tags in src/locales/*.json.
  *
- * Two aliases, each unambiguous because the source tag has no bundle of its
- * own and exactly one shipped bundle shares its base language:
- *   - `uk-UA` → `uk`: a `uk-UA` browser has no `uk-UA.json` to read from, and
- *     `uk` is the only Ukrainian bundle, so routing the region tag to it is
- *     unambiguous. This closes issue #905: a browser reporting `uk-UA`
- *     previously fell to the default instead of the Ukrainian bundle.
- *   - `zh-CN`/`zh-SG`/`zh-MY` → `zh-Hans`: neither region has its own bundle,
- *     and `zh-Hans` is the only Simplified-Chinese bundle, so routing is
- *     unambiguous.
- * Traditional-Chinese regions (`zh-HK`, `zh-TW`) each have their own bundle;
- * the script-side region `zh-MO` is not aliased and has no bundle of its own,
- * so it falls to the default. Collapsing any of them onto another Chinese
- * bundle would pick the wrong orthography for a real user.
+ * Three classes of entry live here:
+ *
+ * - **Single-bundle region tags** (`cs-CZ`): a region the browser reports
+ *   but the bundle does not ship verbatim, with exactly one bundled locale
+ *   sharing the base language. Routing it to that base bundle is
+ *   unambiguous — there is no sibling to pick wrong. Single-bundle
+ *   languages without a region (e.g. `eo`, where browsers send the bare
+ *   tag because Esperanto has no associated region subtag) exact-match
+ *   through the first `resolveLocale` branch and need no alias entry.
+ * - **Ukrainian regional tag** (`uk-UA`): closes issue #905. `uk` is the
+ *   only Ukrainian bundle, so the alias is unambiguous.
+ * - **Simplified-Chinese region tags** (`zh-CN`, `zh-SG`, `zh-MY`): a
+ *   browser with no Simplified-Chinese bundle of its own must reach the
+ *   only Simplified-Chinese bundle (`zh-Hans`). Traditional-Chinese
+ *   regions (`zh-HK`, `zh-TW`) each have their own bundle; the
+ *   script-side region `zh-MO` is not aliased and has no bundle of its
+ *   own, so it falls to the default. Collapsing any of them onto another
+ *   Chinese bundle would pick the wrong orthography for a real user.
  *
  * Adding more aliases is allowed only when the alias target is the *only*
  * bundle the source language ships. Generic subtag fallback (bare `zh` →
- * `zh-Hans`) is intentionally absent: it lets a single
- * browser tag resolve through any of N siblings, which is how a bundle gets
- * rendered in the wrong script for a real user.
+ * `zh-Hans`) is intentionally absent: it lets a single browser tag resolve
+ * through any of N siblings, which is how a bundle gets rendered in the
+ * wrong script for a real user.
  */
 export const LOCALE_ALIASES: Readonly<Record<string, string>> = {
+  'cs-CZ': 'cs',
   'uk-UA': 'uk',
   'zh-CN': 'zh-Hans',
   'zh-SG': 'zh-Hans',

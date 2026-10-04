@@ -182,24 +182,29 @@ new-locale addition, so the `SUPPORTED_LOCALES` edit above is required.
 
 The filename tag is matched exactly. `App.vue`, `DakotaApp.vue`, and
 `ServerApp.vue` select a locale only when `?lang=` or `navigator.language`
-equals an available tag, with no language-subtag fallback: a bare-language
-file (`cs`) is not picked for a `cs-CZ` browser, and a region file (`sk-SK`)
-is not picked for a bare `sk` browser. Keep the tag the issue names; changing
-the matching is a runtime change, not locale content.
+equals an available tag, with no language-subtag fallback: a region file
+(`sk-SK`) is not picked for a bare `sk` browser, and a multi-bundle base
+(`zh`) is not routed to any of its siblings. Keep the tag the issue names;
+changing the matching is a runtime change, not locale content.
 
 The one carve-out from "no fallback" lives in `src/composables/useLocale.ts`
 as the `LOCALE_ALIASES` map and the `resolveLocale()` function. Aliases are
-allowed only when a single base language ships multiple region/script bundles
-and the alias target is the *only* bundle that fits the source region — the
-current entries (`uk-UA` → `uk`, `zh-CN` → `zh-Hans`, `zh-SG` → `zh-Hans`, `zh-MY` → `zh-Hans`)
-close the gap where a browser reporting a regional tag would otherwise fall to
-`en-US`. `uk-UA` → `uk` is the resolution of issue #905: a browser reporting
-`uk-UA` previously fell to the default instead of the Ukrainian bundle, which
-is the only Ukrainian bundle, so the alias is unambiguous. Bare
-`zh` is intentionally not aliased, because three bundles share that base
-(`zh-HK`, `zh-Hans`, `zh-TW`) and picking one arbitrarily would render the
-wrong script for a real user. To add an alias, append the region tag to
-`LOCALE_ALIASES` and add a `resolveLocale` test in
+allowed only when the alias target is the *only* bundle that fits the source
+region — the current entries (`cs-CZ` → `cs`, `uk-UA` → `uk`, `zh-CN` →
+`zh-Hans`, `zh-SG` → `zh-Hans`, `zh-MY` → `zh-Hans`) close the gap where a
+browser reporting a regional tag would otherwise fall to `en-US`. `cs-CZ`
+→ `cs` closes issue #928: a Czech browser reporting the regional tag
+previously fell to the default even though `?lang=cs` works, and `cs` is
+the only Czech bundle. `uk-UA` → `uk` is the resolution of issue #905: a
+browser reporting `uk-UA` previously fell to the default instead of the
+Ukrainian bundle, which is the only Ukrainian bundle, so the alias is
+unambiguous. Bare `zh` is intentionally not aliased, because three bundles
+share that base (`zh-HK`, `zh-Hans`, `zh-TW`) and picking one arbitrarily
+would render the wrong script for a real user. Single-bundle languages
+without a region subtag (`eo` — browsers send the bare tag because
+Esperanto has no associated region) exact-match through the first
+`resolveLocale` branch and need no alias entry. To add an alias, append
+the region tag to `LOCALE_ALIASES` and add a `resolveLocale` test in
 `src/tests/useLocale.test.ts` that asserts the alias resolves to the right
 bundle and that bare/region tags not on the alias map still fall to the
 default.

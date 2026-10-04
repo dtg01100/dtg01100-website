@@ -82,6 +82,19 @@ describe('useLocale', () => {
       expect(resolveLocale('uk')).toBe('uk')
     })
 
+    it('aliases cs-CZ to the cs bundle', () => {
+      // cs-CZ has no bundle of its own and `cs` is the only Czech bundle, so
+      // routing the region tag to the base bundle is unambiguous. This
+      // closes issue #928: a Czech browser reporting the regional tag
+      // previously fell to en-US even though `?lang=cs` works. Single-bundle
+      // languages without a region (e.g. `eo`, where browsers send the bare
+      // tag because Esperanto has no associated region subtag) exact-match
+      // through the first resolveLocale branch and need no alias entry.
+      expect(resolveLocale('cs-CZ')).toBe('cs')
+      // The exact bundle is still matched verbatim.
+      expect(resolveLocale('cs')).toBe('cs')
+    })
+
     it('does not alias Traditional-Chinese region tags', () => {
       // Each Traditional region has its own bundle, so they must keep their
       // own tag. The exact-match path handles the bundled ones; the alias
@@ -102,11 +115,12 @@ describe('useLocale', () => {
 
     it('does not introduce subtag fallback for other languages', () => {
       // The policy from content-maintenance/SKILL.md: a bare-language file
-      // (`cs`) is not picked for a `cs-CZ` browser, and a region file
-      // (`sk-SK`) is not picked for a bare `sk` browser. resolveLocale
-      // honours that — only the explicit LOCALE_ALIASES entries get a
-      // second chance.
-      expect(resolveLocale('cs-CZ')).toBe(DEFAULT_LOCALE)
+      // is not picked for a browser reporting a region tag (and vice versa)
+      // when the alias map has no entry for that tag. resolveLocale honours
+      // that — only the explicit LOCALE_ALIASES entries get a second chance.
+      // `cs-CZ` is covered by the alias added for issue #928; `sk-SK` has
+      // its own bundle and is matched verbatim; bare `sk`, `de`, and `fr`
+      // have no alias entry and must fall to the default.
       expect(resolveLocale('sk')).toBe(DEFAULT_LOCALE)
       expect(resolveLocale('de')).toBe(DEFAULT_LOCALE)
       expect(resolveLocale('fr')).toBe(DEFAULT_LOCALE)
