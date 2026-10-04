@@ -24,17 +24,16 @@ export const DEFAULT_LOCALE = 'en-US'
  * Chromium emit from `navigator.language` or from the `lang` URL parameter;
  * the values are the exact tags in src/locales/*.json.
  *
- * Three classes of entry live here:
+ * Two classes of entry live here:
  *
- * - **Single-bundle region tags** (`cs-CZ`): a region the browser reports
- *   but the bundle does not ship verbatim, with exactly one bundled locale
- *   sharing the base language. Routing it to that base bundle is
- *   unambiguous — there is no sibling to pick wrong. Single-bundle
- *   languages without a region (e.g. `eo`, where browsers send the bare
- *   tag because Esperanto has no associated region subtag) exact-match
- *   through the first `resolveLocale` branch and need no alias entry.
- * - **Ukrainian regional tag** (`uk-UA`): closes issue #905. `uk` is the
- *   only Ukrainian bundle, so the alias is unambiguous.
+ * - **Single-bundle region tags** (`cs-CZ`, `uk-UA`): a region the browser
+ *   reports but the bundle does not ship verbatim, with exactly one
+ *   bundled locale sharing the base language. Routing it to that base
+ *   bundle is unambiguous — there is no sibling to pick wrong. The
+ *   `uk-UA` → `uk` alias closes #905. Single-bundle languages without a
+ *   region (e.g. `eo`, where browsers send the bare tag because Esperanto
+ *   has no associated region subtag) exact-match through the first
+ *   `resolveLocale` branch and need no alias entry.
  * - **Simplified-Chinese region tags** (`zh-CN`, `zh-SG`, `zh-MY`): a
  *   browser with no Simplified-Chinese bundle of its own must reach the
  *   only Simplified-Chinese bundle (`zh-Hans`). Traditional-Chinese
